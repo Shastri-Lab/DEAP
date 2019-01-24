@@ -18,7 +18,7 @@ class NeuronMapper:
         of dropput[i] and vice-versa.
         """
         mrr = MRRTransferFunction()
-        dropput = np.linspace(0, 1, precision)
+        dropput = np.linspace(1.1e-4, 1, precision)
         phase = mrr.phaseFromDropput(dropput)
         return phase, dropput
 
