@@ -1,13 +1,12 @@
 import numpy as np
 import matplotlib.pyplot as plt
-from helpers import bisect_min
+from nptk.helpers import bisect_min
 
 
 class MRRTransferFunction:
     """
     Computes the transfer function of a microring resonator (MMR).
     """
-
     def __init__(self, a=1, r1=0.99, r2=0.99):
         self.a = a
         self.r1 = r1
@@ -34,21 +33,23 @@ class MRRTransferFunction:
 
 class PhotonicNeuron:
     """
-    A simple, time-independent photonic neuron.
+    A simple, time-independent model of a neuron.
     """
     def __init__(self, phaseShifts, outputGain):
         self.phi = np.asarray(phaseShifts)
         self.outputGain = outputGain
 
-        self.mrr = MRRTransferFunction()
         self.inputSize = len(phaseShifts)
+        mrr = MRRTransferFunction()
+        self._throughput = mrr.throughput(self.phi)
+        self._dropput = mrr.dropput(self.phi)
 
     def compute(self, intensities):
         intensities = np.asarray(intensities)
         assert intensities.size == self.inputSize
 
-        summedThroughput = np.sum(intensities * self.mrr.throughput(self.phi))
-        summedDropput = np.sum(intensities * self.mrr.dropput(self.phi))
+        summedThroughput = np.dot(intensities, self._throughput)
+        summedDropput = np.dot(intensities, self._dropput)
         photodiodeVoltage = summedDropput - summedThroughput
 
         return self.outputGain * photodiodeVoltage

@@ -1,6 +1,6 @@
 import numpy as np
-from photonics import MRRTransferFunction, PhotonicNeuron
-from helpers import bisect_min
+from nptk.photonics import MRRTransferFunction, PhotonicNeuron
+from nptk.helpers import bisect_min
 
 
 class NeuronMapper:
