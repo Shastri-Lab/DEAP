@@ -17,21 +17,12 @@ class NeuronMapper:
         I.e. At a an index i, a phase shift of phi[i] will correspond to a
         of dropput[i] and vice-versa.
         """
-        phi = np.linspace(np.deg2rad(-181), 0, 1000000)
-        Td = MRRTransferFunction().dropput(phi)
-        desiredDropput = np.linspace(0, 1, precision)
-
-        dropput = np.zeros(precision)
-        phase = np.zeros(precision)
-
-        for i in range(precision):
-            index = bisect_min(Td, desiredDropput[i])
-            phase[i], dropput[i] = phi[index], Td[index]
-            print(desiredDropput[i], dropput[i])
-
+        mrr = MRRTransferFunction()
+        dropput = np.linspace(0, 1, precision)
+        phase = mrr.phaseFromDropput(dropput)
         return phase, dropput
 
-    _precision = 1001
+    _precision = 127
 
     # Precomputed phase and dropput values for a given precision.
     # These will be populated when a neuron is created.

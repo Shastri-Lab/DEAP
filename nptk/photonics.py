@@ -30,23 +30,34 @@ class MRRTransferFunction:
 
         return num / denom
 
+    def phaseFromDropput(self, Td):
+        """
+        Given a dropout, create a phase.
+        """
+        cos_phi = ((1 - self.r1**2) * (1 - self.r2**2) * self.a / Td - 1 - (self.r1 * self.r2 * self.a)**2) # noqa
+        return np.arccos(cos_phi / (-2 * self.r1 * self.r2 * self.a))
+
 
 class PhotonicNeuron:
     """
     A simple, time-independent model of a neuron.
     """
     def __init__(self, phaseShifts, outputGain):
-        self.phi = np.asarray(phaseShifts)
+        self.phaseShifts = np.asarray(phaseShifts)
         self.outputGain = outputGain
 
-        self.inputSize = len(phaseShifts)
+        self.inputSize = phaseShifts.size
         mrr = MRRTransferFunction()
-        self._throughput = mrr.throughput(self.phi)
-        self._dropput = mrr.dropput(self.phi)
+        self._throughput = mrr.throughput(self.phaseShifts)
+        self._dropput = mrr.dropput(self.phaseShifts)
 
     def compute(self, intensities):
         intensities = np.asarray(intensities)
-        assert intensities.size == self.inputSize
+        if intensities.size != self.inputSize:
+            raise AssertionError(
+                    "Number of inputs ({}) is not " +
+                    "equal to  number of weights ({})".format(
+                        intensities.size, self.inputSize))
 
         summedThroughput = np.dot(intensities, self._throughput)
         summedDropput = np.dot(intensities, self._dropput)
