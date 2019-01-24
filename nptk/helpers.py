@@ -2,6 +2,11 @@ import numpy as np
 
 
 def bisect_min(array, val):
+    """
+    Given a sorted array, return the index of an existing element
+    that has the closest absolute distance to val.
+    """
+
     array = np.asarray(array)
     index = np.searchsorted(array, val, side='left')
 
