@@ -1,5 +1,6 @@
 import numpy as np
 from nptk.photonics import MRRTransferFunction, PhotonicNeuron
+from nptk.photonics import MRMTransferFunction
 
 
 def test_MRRTransferFunction():
@@ -12,6 +13,20 @@ def test_MRRTransferFunction():
 
     summed = np.mean(Tp + Td)
     assert summed == 1
+
+    phi_test = np.linspace(0.1, np.pi - 0.1, 100)
+    phi_recov = mrr.phaseFromDropput(mrr.dropput(phi_test))
+    err = np.abs(phi_test - phi_recov)
+    assert np.all(err < 1e-9)
+
+
+def test_MRMTransferFunction():
+    mrm = MRMTransferFunction(a=0.9, r=0.9)
+
+    phi_test = np.linspace(0.1, np.pi - 0.1, 100)
+    phi_recov = mrm.phaseFromThroughput(mrm.throughput(phi_test))
+    err = np.abs(phi_test - phi_recov)
+    assert np.all(err < 1e-9)
 
 
 def test_Photonics():

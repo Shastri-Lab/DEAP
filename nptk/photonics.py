@@ -38,6 +38,25 @@ class MRRTransferFunction:
         return np.arccos(cos_phi / (-2 * self.r1 * self.r2 * self.a))
 
 
+class MRMTransferFunction:
+    """
+    Computes the transfer function of a microring modulator (MRM).
+    """
+
+    def __init__(self, a=0.9, r=0.9):
+        self.a = a
+        self.r = r
+
+    def throughput(self, phi):
+        I_pass = self.a**2 - 2 * self.r * self.a * np.cos(phi) + self.r**2
+        I_input = 1 - 2 * self.a * self.r * np.cos(phi) + (self.r * self.a)**2
+        return I_pass / I_input
+
+    def phaseFromThroughput(self, Tn):
+        cos_phi = Tn * (1 + (self.r * self.a)**2) - self.a**2 - self.r**2
+        return np.arccos(cos_phi / (-2 * self.r * self.a * (1 - Tn)))
+
+
 class PhotonicNeuron:
     """
     A simple, time-independent model of a neuron.
