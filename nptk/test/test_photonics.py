@@ -35,7 +35,7 @@ def test_Photonics():
     gain = 1
 
     neuron = PhotonicNeuron(phase, gain)
-    computed = neuron.compute(inputs)
+    computed = neuron.step(inputs)
 
     mrr = MRRTransferFunction()
     expected = gain * \
@@ -46,5 +46,5 @@ def test_Photonics():
 
     gain = 0
     neuron = PhotonicNeuron(phase, gain)
-    computed = neuron.compute(inputs)
+    computed = neuron.step(inputs)
     assert computed == 0
