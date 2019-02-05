@@ -42,7 +42,6 @@ class MRMTransferFunction:
     """
     Computes the transfer function of a microring modulator (MRM).
     """
-
     def __init__(self, a=0.9, r=0.9):
         self.a = a
         self.r = r
