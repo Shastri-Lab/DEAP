@@ -57,7 +57,12 @@ class MRMTransferFunction:
         return np.arccos(cos_phi / (-2 * self.r * self.a * (1 - Tn)))
 
 
-class PhotonicNeuron:
+class PhotonicElement:
+    def step(self, *args):
+        raise NotImplementedError()
+
+
+class PhotonicNeuron(PhotonicElement):
     """
     A simple, time-independent model of a neuron.
     """
@@ -70,11 +75,11 @@ class PhotonicNeuron:
         self._throughput = mrr.throughput(self.phaseShifts)
         self._dropput = mrr.dropput(self.phaseShifts)
 
-    def compute(self, intensities):
+    def step(self, intensities):
         intensities = np.asarray(intensities)
         if intensities.size != self.inputSize:
             raise AssertionError(
-                    "Number of inputs ({}) is not " +
+                    "Number of inputs ({}) is not "
                     "equal to  number of weights ({})".format(
                         intensities.size, self.inputSize))
 
@@ -83,3 +88,42 @@ class PhotonicNeuron:
         photodiodeVoltage = summedDropput - summedThroughput
 
         return self.outputGain * photodiodeVoltage
+
+
+class LaserDiodeArray(PhotonicElement):
+    """
+    An array of laser diodes.
+    """
+    def __init__(self, shape, outputShape, connections, power):
+        assert type(shape) is tuple
+        assert type(outputShape) is tuple
+        self.shape = shape
+        self._output = np.ones(outputShape) * power
+        self.connections = connections
+
+    def step(self):
+        return self._output
+
+
+class ModulatorArray(PhotonicElement):
+    """
+    An array of photonic modulators.
+    """
+    def __init__(self, phaseShifts):
+        self.phaseShifts = np.asarray(phaseShifts)
+
+        self.inputShape = phaseShifts.shape
+        mrm = MRMTransferFunction()
+        self._throughput = mrm.throughput(self.phaseShifts)
+
+    def step(self, intensities):
+        intensities = np.asarray(intensities)
+        if intensities.shape != self.inputShape:
+            raise AssertionError(
+                    "Input shape {} is not "
+                    "equal to modulator shape {}").format(
+                        intensities.shape,
+                        self.inputShape
+                    )
+
+        return self._throughput * intensities

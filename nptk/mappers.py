@@ -1,6 +1,11 @@
 import numpy as np
-from nptk.photonics import MRRTransferFunction, PhotonicNeuron
+
 from nptk.helpers import bisect_min
+from nptk.photonics import MRRTransferFunction
+from nptk.photonics import MRMTransferFunction
+from nptk.photonics import PhotonicNeuron
+from nptk.photonics import LaserDiodeArray
+from nptk.photonics import ModulatorArray
 
 
 class NeuronMapper:
@@ -8,7 +13,6 @@ class NeuronMapper:
     Class that that maps a set of weights to an equivalent
     photonic neuron.
     """
-
     def _precomputeDropputToPhaseMapping(precision):
         """
         Creates a mapping between phase and dropput by index. For a given
@@ -67,3 +71,34 @@ class NeuronMapper:
             phaseShifts[i] = NeuronMapper._phase[index]
 
         return PhotonicNeuron(phaseShifts, outputGain)
+
+
+class LaserDiodeArrayMapper:
+    """
+    Class that maps a convolution size and input size to an array of laser
+    diodes.
+    """
+    def build(inputShape, outputShape, power=1):
+        # Create adjacency list for input and output shape.
+        connections = np.full(inputShape, fill_value=None, dtype=object)
+        for row in range(outputShape[0]):
+            for col in range(outputShape[1]):
+                connRow = row % inputShape[0]
+                connCol = col % inputShape[1]
+                if connections[connRow, connCol] is None:
+                    connections[connRow, connCol] = set()
+                connections[connRow, connCol].add((row, col))
+
+        return LaserDiodeArray(inputShape, outputShape, connections, power)
+
+
+class ModulatorArrayMapper:
+    """
+    Class that maps a relative intenstiy matrix to an array of optical
+    modulators.
+    """
+    def build(intenstiyMatrix):
+        assert not np.any(intenstiyMatrix > 1)
+        mrm = MRMTransferFunction()
+        phaseShifts = mrm.phaseFromThroughput(intenstiyMatrix)
+        return ModulatorArray(phaseShifts)

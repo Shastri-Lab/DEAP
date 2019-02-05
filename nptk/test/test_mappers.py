@@ -1,6 +1,7 @@
 import numpy as np
 from nptk.mappers import NeuronMapper
 from nptk.mappers import LaserDiodeArrayMapper
+from nptk.mappers import ModulatorArrayMapper
 
 
 def test_NeuronMapperTwoSum():
@@ -74,3 +75,15 @@ def test_LaserDiodeMapper():
 
     output = ld.step()
     assert np.all(output == power)
+
+
+def test_ModulatorArrayMapper():
+    intenstiyMatrix = np.random.rand(5, 5)
+    ma = ModulatorArrayMapper.build(intenstiyMatrix)
+    inputs = np.random.randint(0, 255, (5, 5))
+
+    actual = ma.step(inputs)
+    expected = intenstiyMatrix * inputs
+    err = np.abs(actual - expected)
+
+    assert np.all(err < 1e-9)
