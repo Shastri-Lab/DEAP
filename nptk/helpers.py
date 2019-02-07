@@ -6,7 +6,6 @@ def bisect_min(array, val):
     Given a sorted array, return the index of an existing element
     that has the closest absolute distance to val.
     """
-
     array = np.asarray(array)
     index = np.searchsorted(array, val, side='left')
 
@@ -29,6 +28,10 @@ def bisect_min(array, val):
 
 
 def getOutputShape(inputShape, kernelShape, padding, stride):
+    """
+    Given an input shape, kernel shape, padding and stride, return the
+    dimensions of the convoled image.
+    """
     assert kernelShape[0] == kernelShape[1]
     filterSize = kernelShape[0]
     outputWidth = (inputShape[1] - filterSize + 2 * padding) / stride + 1
