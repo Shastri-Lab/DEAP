@@ -106,7 +106,8 @@ class PhotonicNeuronArray:
             for col in range(self.connections.shape[1]):
                 connection = self.connections[row, col]
                 inputs = intenstiyMatrix[connection[:, 0], connection[:, 1]]
-                self._output[row, col] = self.neurons[row, col].step(inputs.ravel())
+                self._output[row, col] = self.neurons[row, col].step(
+                    inputs.ravel())
 
         return self._output
 
