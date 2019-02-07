@@ -1,11 +1,12 @@
 import numpy as np
 
-from nptk.helpers import bisect_min
+from nptk.helpers import bisect_min, getOutputShape
 from nptk.photonics import MRRTransferFunction
 from nptk.photonics import MRMTransferFunction
 from nptk.photonics import PhotonicNeuron
 from nptk.photonics import LaserDiodeArray
 from nptk.photonics import ModulatorArray
+from nptk.photonics import PhotonicNeuronArray
 
 
 class NeuronMapper:
@@ -97,8 +98,64 @@ class ModulatorArrayMapper:
     Class that maps a relative intenstiy matrix to an array of optical
     modulators.
     """
+    _mrm = MRMTransferFunction()
+
     def build(intenstiyMatrix):
         assert not np.any(intenstiyMatrix > 1)
-        mrm = MRMTransferFunction()
-        phaseShifts = mrm.phaseFromThroughput(intenstiyMatrix)
+        phaseShifts = ModulatorArrayMapper._mrm.phaseFromThroughput(
+                intenstiyMatrix)
         return ModulatorArray(phaseShifts)
+
+
+class PhotonicNeuronArrayMapper:
+    """
+    Class that maps a convolved matrix using photonic neurons
+    """
+
+    def _createConnectionGraph(
+            inputShape, kernel, padding, stride, outputShape):
+        connections = np.full(outputShape, fill_value=None, dtype=object)
+        neuralWeights = np.full(outputShape, fill_value=None, dtype=object)
+        filterSize = kernel.shape[0]
+
+        paddedRows = inputShape[0] + 2 * padding
+        paddedColumns = inputShape[1] + 2 * padding
+        for row in range(0, paddedRows - filterSize + 1, stride):
+            for col in range(0, paddedColumns - filterSize + 1, stride):
+                # Corresponding output row
+                outputRow = row // stride
+                # Corresponding output column
+                outputCol = col // stride
+
+                # Iterate over indices that connect to a particular neuron
+                rowStart = max(padding, row)
+                colStart = max(padding, col)
+                rowEnd = min(row + filterSize, paddedRows - padding)
+                colEnd = min(col + filterSize, paddedColumns - padding)
+
+                # Get required neural weights, exlcuding those that
+                # touch padded values.
+                neuralWeights[outputRow, outputCol] = \
+                    kernel[rowStart-row:rowEnd-row,
+                           colStart-col:colEnd-col].ravel()
+
+                # Generate connections
+                R, C = np.mgrid[rowStart-padding:rowEnd-padding,
+                                colStart-padding:colEnd-padding]
+                connections[outputRow, outputCol] = \
+                    np.column_stack((R.ravel(), C.ravel()))
+
+        return connections, neuralWeights
+
+    def build(inputShape, kernel, padding=0, stride=1):
+        outputShape = getOutputShape(inputShape, kernel.shape, padding, stride)
+        connections, neuralWeights = \
+            PhotonicNeuronArrayMapper._createConnectionGraph(
+                inputShape, kernel, padding, stride, outputShape)
+
+        neurons = np.full(outputShape, fill_value=None, dtype=object)
+        for row in range(outputShape[0]):
+            for col in range(outputShape[1]):
+                neurons[row, col] = NeuronMapper.build(neuralWeights[row, col])
+
+        return PhotonicNeuronArray(inputShape, connections, neurons)

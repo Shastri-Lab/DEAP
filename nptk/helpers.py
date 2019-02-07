@@ -26,3 +26,15 @@ def bisect_min(array, val):
             array[index + 1]])
 
     return np.argmin(np.abs(val - offsetArray)) - 1 + index
+
+
+def getOutputShape(inputShape, kernelShape, padding, stride):
+    assert kernelShape[0] == kernelShape[1]
+    filterSize = kernelShape[0]
+    outputWidth = (inputShape[1] - filterSize + 2 * padding) / stride + 1
+    outputHeight = (inputShape[0] - filterSize + 2 * padding) / stride + 1
+
+    outputWidth = int(outputWidth)
+    outputHeight = int(outputHeight)
+
+    return (outputHeight, outputWidth)

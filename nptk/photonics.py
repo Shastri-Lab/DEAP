@@ -56,20 +56,15 @@ class MRMTransferFunction:
         return np.arccos(cos_phi / (-2 * self.r * self.a * (1 - Tn)))
 
 
-class PhotonicElement:
-    def step(self, *args):
-        raise NotImplementedError()
-
-
-class PhotonicNeuron(PhotonicElement):
+class PhotonicNeuron:
     """
     A simple, time-independent model of a neuron.
     """
     def __init__(self, phaseShifts, outputGain):
         self.phaseShifts = np.asarray(phaseShifts)
         self.outputGain = outputGain
-
         self.inputSize = phaseShifts.size
+
         mrr = MRRTransferFunction()
         self._throughput = mrr.throughput(self.phaseShifts)
         self._dropput = mrr.dropput(self.phaseShifts)
@@ -89,31 +84,55 @@ class PhotonicNeuron(PhotonicElement):
         return self.outputGain * photodiodeVoltage
 
 
-class LaserDiodeArray(PhotonicElement):
+class PhotonicNeuronArray:
+    def __init__(self, inputShape, connections, neurons):
+        self.inputShape = inputShape
+        assert neurons.shape == connections.shape
+        self.connections = connections
+        self.neurons = neurons
+        self._output = np.empty(self.connections.shape)
+
+    def step(self, intenstiyMatrix):
+        intenstiyMatrix = np.asarray(intenstiyMatrix)
+        if intenstiyMatrix.shape != self.inputShape:
+            raise AssertionError(
+                "Input shape {} is not "
+                "equal to array shape {}").format(
+                    intenstiyMatrix.shape,
+                    self.inputShape
+                )
+
+        for row in range(self.connections.shape[0]):
+            for col in range(self.connections.shape[1]):
+                connection = self.connections[row, col]
+                inputs = intenstiyMatrix[connection[:, 0], connection[:, 1]]
+                self._output[row, col] = self.neurons[row, col].step(inputs.ravel())
+
+        return self._output
+
+
+class LaserDiodeArray:
     """
     An array of laser diodes.
     """
     def __init__(self, shape, outputShape, connections, power):
-        assert type(shape) is tuple
-        assert type(outputShape) is tuple
         self.shape = shape
-        self._output = np.ones(outputShape) * power
         self.connections = connections
+        self._output = np.ones(outputShape) * power
 
     def step(self):
         return self._output
 
 
-class ModulatorArray(PhotonicElement):
+class ModulatorArray:
     """
     An array of photonic modulators.
     """
     def __init__(self, phaseShifts):
         self.phaseShifts = np.asarray(phaseShifts)
-
         self.inputShape = phaseShifts.shape
-        mrm = MRMTransferFunction()
-        self._throughput = mrm.throughput(self.phaseShifts)
+        self.mrm = MRMTransferFunction()
+        self._throughput = self.mrm.throughput(self.phaseShifts)
 
     def step(self, intensities):
         intensities = np.asarray(intensities)
@@ -126,3 +145,7 @@ class ModulatorArray(PhotonicElement):
                     )
 
         return self._throughput * intensities
+
+    def updatePhaseShifts(self, newPhaseShifts):
+        self.phaseShifts = np.asarray(newPhaseShifts)
+        self._throughput = self.mrm.throughput(self.phaseShifts)
