@@ -67,12 +67,11 @@ def test_LaserDiodeMapper():
     power = 255
     ld = LaserDiodeArrayMapper.build(inputShape, outputShape, power)
 
-    num_connections = 0
-    for row in range(inputShape[0]):
-        for col in range(inputShape[1]):
-            num_connections += len(ld.connections[row, col])
-
-    assert num_connections == outputShape[0] * outputShape[1]
+    for row in range(ld.connections.shape[0]):
+        for col in range(ld.connections.shape[1]):
+            index = ld.connections[row, col]
+            assert index[0] == row % ld.shape[0]
+            assert index[1] == col % ld.shape[1]
 
     output = ld.step()
     assert np.all(output == power)

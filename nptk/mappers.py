@@ -81,14 +81,10 @@ class LaserDiodeArrayMapper:
     """
     def build(inputShape, outputShape, power=1):
         # Create adjacency list for input and output shape.
-        connections = np.full(inputShape, fill_value=None, dtype=object)
-        for row in range(outputShape[0]):
-            for col in range(outputShape[1]):
-                connRow = row % inputShape[0]
-                connCol = col % inputShape[1]
-                if connections[connRow, connCol] is None:
-                    connections[connRow, connCol] = set()
-                connections[connRow, connCol].add((row, col))
+        grid = np.indices(outputShape)
+        rows = grid[0] % inputShape[0]
+        cols = grid[1] % inputShape[1]
+        connections = np.dstack((rows, cols))
 
         return LaserDiodeArray(inputShape, outputShape, connections, power)
 
@@ -118,31 +114,23 @@ class PhotonicNeuronArrayMapper:
         neuralWeights = np.full(outputShape, fill_value=None, dtype=object)
         filterSize = kernel.shape[0]
 
-        paddedRows = inputShape[0] + 2 * padding
-        paddedColumns = inputShape[1] + 2 * padding
-        for row in range(0, paddedRows - filterSize + 1, stride):
-            for col in range(0, paddedColumns - filterSize + 1, stride):
-                # Corresponding output row
-                outputRow = row // stride
-                # Corresponding output column
-                outputCol = col // stride
+        for row in range(connections.shape[0]):
+            for col in range(connections.shape[1]):
+                inputRow = row * stride
+                inputCol = col * stride
 
-                # Iterate over indices that connect to a particular neuron
-                rowStart = max(padding, row)
-                colStart = max(padding, col)
-                rowEnd = min(row + filterSize, paddedRows - padding)
-                colEnd = min(col + filterSize, paddedColumns - padding)
+                rowStart = max(0, inputRow - padding)
+                colStart = max(0, inputCol - padding)
+                colEnd = min(inputCol + filterSize - padding, inputShape[1])
+                rowEnd = min(inputRow + filterSize - padding, inputShape[0])
 
-                # Get required neural weights, exlcuding those that
-                # touch padded values.
-                neuralWeights[outputRow, outputCol] = \
-                    kernel[rowStart-row:rowEnd-row,
-                           colStart-col:colEnd-col].ravel()
+                neuralWeights[row, col] = \
+                    kernel[rowStart-inputRow+padding:rowEnd-inputRow+padding,
+                           colStart-inputCol+padding:colEnd-inputCol+padding] \
+                    .ravel()
 
-                # Generate connections
-                R, C = np.mgrid[rowStart-padding:rowEnd-padding,
-                                colStart-padding:colEnd-padding]
-                connections[outputRow, outputCol] = \
+                R, C = np.mgrid[rowStart:rowEnd, colStart:colEnd]
+                connections[row, col] = \
                     np.column_stack((R.ravel(), C.ravel()))
 
         return connections, neuralWeights
