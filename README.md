@@ -1,4 +1,4 @@
-# Issues
-
-- Fix issue without OOB for values close to 1
-  for modulator
+# To do
+* Add support for multiple kernels
+* Add support for inputs greater than modulator neuron size
+* Build full network

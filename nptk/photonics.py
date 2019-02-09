@@ -11,6 +11,7 @@ class MRRTransferFunction:
         self.a = a
         self.r1 = r1
         self.r2 = r2
+        self._minDropput = self.dropput(np.pi)
 
     def throughput(self, phi):
         """
@@ -34,8 +35,22 @@ class MRRTransferFunction:
         """
         Given a dropout, create a phase.
         """
-        cos_phi = ((1 - self.r1**2) * (1 - self.r2**2) * self.a / Td - 1 - (self.r1 * self.r2 * self.a)**2) # noqa
-        return np.arccos(cos_phi / (-2 * self.r1 * self.r2 * self.a))
+        Td = np.asarray(Td)
+
+        # Create empty array to store results
+        ans = np.empty_like(Td)
+
+        # For tiny dropput values, set to pi
+        lessThanMin = Td <= self._minDropput
+        minOrMore = ~lessThanMin
+        ans[lessThanMin] = np.pi
+
+        # For remaning, actually try to solve.
+        num = ((1 - self.r1**2) * (1 - self.r2**2) * self.a / Td[minOrMore] - 1 - (self.r1 * self.r2 * self.a)**2) # noqa
+        denom = -2 * self.r1 * self.r2 * self.a
+        ans[minOrMore] = np.arccos(num / denom)
+
+        return ans
 
 
 class MRMTransferFunction:
@@ -45,6 +60,7 @@ class MRMTransferFunction:
     def __init__(self, a=0.9, r=0.9):
         self.a = a
         self.r = r
+        self._maxThroughput = self.throughput(np.pi)
 
     def throughput(self, phi):
         I_pass = self.a**2 - 2 * self.r * self.a * np.cos(phi) + self.r**2
@@ -52,8 +68,21 @@ class MRMTransferFunction:
         return I_pass / I_input
 
     def phaseFromThroughput(self, Tn):
-        cos_phi = Tn * (1 + (self.r * self.a)**2) - self.a**2 - self.r**2
-        return np.arccos(cos_phi / (-2 * self.r * self.a * (1 - Tn)))
+        Tn = np.asarray(Tn)
+
+        # Create variable to store results
+        ans = np.empty_like(Tn)
+
+        # For high throuputs, set to pi
+        moreThanMax = Tn >= self._maxThroughput
+        maxOrLess = ~moreThanMax
+        ans[moreThanMax] = np.pi
+
+        # Now solve the remainng
+        cos_phi = Tn[maxOrLess] * (1 + (self.r * self.a)**2) - self.a**2 - self.r**2  # noqa
+        ans[maxOrLess] = np.arccos(cos_phi / (-2 * self.r * self.a * (1 - Tn[maxOrLess])))  # noqa
+
+        return ans
 
 
 class PhotonicNeuron:
