@@ -55,11 +55,7 @@ class NeuronMapper:
         maxElement = np.amax(np.abs(weights))
 
         # Normalize the weights and compute the post-optical gain.
-        if maxElement > 1:
-            outputGain = maxElement
-        else:
-            outputGain = 1
-
+        outputGain = max(maxElement, 1)
         normalized_weights = weights / outputGain
 
         # Determine what dropput values are needed using the formula:
@@ -97,9 +93,11 @@ class ModulatorArrayMapper:
     _mrm = MRMTransferFunction()
 
     def build(intenstiyMatrix):
-        assert not np.any(intenstiyMatrix > 1)
+        assert not np.any(intenstiyMatrix < 0)
+
+        normalized = intenstiyMatrix / max(np.amax(intenstiyMatrix), 1)
         phaseShifts = ModulatorArrayMapper._mrm.phaseFromThroughput(
-                intenstiyMatrix)
+                normalized)
         return ModulatorArray(phaseShifts)
 
 
