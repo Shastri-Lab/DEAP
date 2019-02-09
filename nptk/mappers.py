@@ -7,6 +7,7 @@ from nptk.photonics import PhotonicNeuron
 from nptk.photonics import LaserDiodeArray
 from nptk.photonics import ModulatorArray
 from nptk.photonics import PhotonicNeuronArray
+from nptk.photonics import PhotonicConvolver
 
 
 class NeuronMapper:
@@ -92,12 +93,15 @@ class ModulatorArrayMapper:
     """
     _mrm = MRMTransferFunction()
 
-    def build(intenstiyMatrix):
+    def calculatePhaseShifts(intenstiyMatrix):
         assert not np.any(intenstiyMatrix < 0)
-
         normalized = intenstiyMatrix / max(np.amax(intenstiyMatrix), 1)
-        phaseShifts = ModulatorArrayMapper._mrm.phaseFromThroughput(
+        return ModulatorArrayMapper._mrm.phaseFromThroughput(
                 normalized)
+
+    def build(intenstiyMatrix):
+        phaseShifts = \
+            ModulatorArrayMapper.calculatePhaseShifts(intenstiyMatrix)
         return ModulatorArray(phaseShifts)
 
 
@@ -154,7 +158,22 @@ class PhotonicNeuronArrayMapper:
                 neurons[row, col] = NeuronMapper.build(weights)
 
         return PhotonicNeuronArray(
-            inputShape,
-            connections,
-            neurons,
-            sharedCounts)
+                inputShape,
+                connections,
+                neurons,
+                sharedCounts)
+
+
+class PhotonicConvolverMapper:
+    def build(image, kernel, padding=0, stride=1, power=1):
+        laserDiodeArray = LaserDiodeArrayMapper.build(
+                kernel.shape, image.shape, power)
+        modulatorArray = ModulatorArrayMapper.build(
+                image)
+        photonicNeuronArray = PhotonicNeuronArrayMapper.build(
+                image.shape, kernel, padding, stride)
+
+        return PhotonicConvolver(
+                laserDiodeArray,
+                modulatorArray,
+                photonicNeuronArray)

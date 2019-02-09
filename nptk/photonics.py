@@ -150,6 +150,7 @@ class LaserDiodeArray:
     """
     def __init__(self, shape, outputShape, connections, power):
         self.shape = shape
+        self.power = power
         self.connections = connections
         self._output = np.ones(outputShape) * power
 
@@ -163,13 +164,13 @@ class ModulatorArray:
     """
     def __init__(self, phaseShifts):
         self.phaseShifts = np.asarray(phaseShifts)
-        self.inputShape = phaseShifts.shape
-        self.mrm = MRMTransferFunction()
-        self._throughput = self.mrm.throughput(self.phaseShifts)
+        self.shape = phaseShifts.shape
+        self._mrm = MRMTransferFunction()
+        self._throughput = self._mrm.throughput(self.phaseShifts)
 
     def step(self, intensities):
         intensities = np.asarray(intensities)
-        if intensities.shape != self.inputShape:
+        if intensities.shape != self.shape:
             raise AssertionError(
                     "Input shape {} is not "
                     "equal to modulator shape {}").format(
@@ -181,4 +182,20 @@ class ModulatorArray:
 
     def updatePhaseShifts(self, newPhaseShifts):
         self.phaseShifts = np.asarray(newPhaseShifts)
-        self._throughput = self.mrm.throughput(self.phaseShifts)
+        self._throughput = self._mrm.throughput(self.phaseShifts)
+
+
+class PhotonicConvolver:
+    """
+    A photonic convolver, made up different components
+    """
+    def __init__(self, laserDiodeArray, modulatorArray, photonicNeuronArray):
+        self.laserDiodeArray = laserDiodeArray
+        self.modulatorArray = modulatorArray
+        self.photonicNeuronArray = photonicNeuronArray
+
+    def step(self):
+        laserOutput = self.laserDiodeArray.step()
+        modulatorOutput = self.modulatorArray.step(laserOutput)
+        convOutput = self.photonicNeuronArray.step(modulatorOutput)
+        return convOutput
