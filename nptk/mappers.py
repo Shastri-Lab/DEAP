@@ -110,6 +110,7 @@ class PhotonicNeuronArrayMapper:
             inputShape, kernel, padding, stride, outputShape):
         connections = np.full(outputShape, fill_value=None, dtype=object)
         neuralWeights = np.full(outputShape, fill_value=None, dtype=object)
+        counts = np.zeros(inputShape)
         filterSize = kernel.shape[0]
 
         for row in range(connections.shape[0]):
@@ -130,18 +131,30 @@ class PhotonicNeuronArrayMapper:
                 R, C = np.mgrid[rowStart:rowEnd, colStart:colEnd]
                 connections[row, col] = \
                     np.column_stack((R.ravel(), C.ravel()))
+                counts[rowStart:rowEnd, colStart:colEnd] += 1
 
-        return connections, neuralWeights
+        return connections, neuralWeights, counts
 
     def build(inputShape, kernel, padding=0, stride=1):
         outputShape = getOutputShape(inputShape, kernel.shape, padding, stride)
-        connections, neuralWeights = \
+        connections, neuralWeights, sharedCounts = \
             PhotonicNeuronArrayMapper._createConnectionGraph(
                 inputShape, kernel, padding, stride, outputShape)
 
         neurons = np.full(outputShape, fill_value=None, dtype=object)
         for row in range(outputShape[0]):
             for col in range(outputShape[1]):
-                neurons[row, col] = NeuronMapper.build(neuralWeights[row, col])
+                conn = connections[row, col]
 
-        return PhotonicNeuronArray(inputShape, connections, neurons)
+                # Get the number of times the  inupts were shared
+                count = sharedCounts[conn[:, 0], conn[:, 1]].ravel()
+
+                # Scale the weight accordingly
+                weights = neuralWeights[row, col] * count
+                neurons[row, col] = NeuronMapper.build(weights)
+
+        return PhotonicNeuronArray(
+            inputShape,
+            connections,
+            neurons,
+            sharedCounts)
