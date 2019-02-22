@@ -126,20 +126,28 @@ class PhotonicNeuronArrayMapper:
                 colStart = max(0, inputCol - padding)
                 colEnd = min(inputCol + filterSize - padding, inputShape[1])
                 rowEnd = min(inputRow + filterSize - padding, inputShape[0])
-
-                neuralWeights[row, col] = \
-                    kernel[rowStart-inputRow+padding:rowEnd-inputRow+padding,
-                           colStart-inputCol+padding:colEnd-inputCol+padding] \
-                    .ravel()
-
                 R, C = np.mgrid[rowStart:rowEnd, colStart:colEnd]
-                connections[row, col] = \
-                    np.column_stack((R.ravel(), C.ravel()))
-                counts[rowStart:rowEnd, colStart:colEnd] += 1
+                counts[rowStart:rowEnd, colStart:colEnd] += kernel.shape[2]
+
+                for depth in range(connections.shape[2]):
+                    neuralWeights[row, col, depth] = \
+                        kernel[
+                            rowStart-inputRow+padding:rowEnd-inputRow+padding,
+                            colStart-inputCol+padding:colEnd-inputCol+padding,
+                            depth].ravel()
+                    connections[row, col, depth] = \
+                        np.column_stack((R.ravel(), C.ravel()))
 
         return connections, neuralWeights, counts
 
     def build(inputShape, kernel, padding=0, stride=1):
+        assert kernel.ndim == 2 or kernel.ndim == 3
+        assert kernel.shape[0] == kernel.shape[1]
+
+        if kernel.ndim != 3:
+            # Add a depth of 1 if only a single kernel is provided.
+            kernel = np.reshape(kernel, (kernel.shape[0], kernel.shape[1], 1))
+
         outputShape = getOutputShape(inputShape, kernel.shape, padding, stride)
         connections, neuralWeights, sharedCounts = \
             PhotonicNeuronArrayMapper._createConnectionGraph(
@@ -148,14 +156,15 @@ class PhotonicNeuronArrayMapper:
         neurons = np.full(outputShape, fill_value=None, dtype=object)
         for row in range(outputShape[0]):
             for col in range(outputShape[1]):
-                conn = connections[row, col]
+                for depth in range(outputShape[2]):
+                    conn = connections[row, col, depth]
 
-                # Get the number of times the  inupts were shared
-                count = sharedCounts[conn[:, 0], conn[:, 1]].ravel()
+                    # Get the number of times the  inupts were shared
+                    count = sharedCounts[conn[:, 0], conn[:, 1]].ravel()
 
-                # Scale the weight accordingly
-                weights = neuralWeights[row, col] * count
-                neurons[row, col] = NeuronMapper.build(weights)
+                    # Scale the weight accordingly
+                    weights = neuralWeights[row, col, depth] * count
+                    neurons[row, col, depth] = NeuronMapper.build(weights)
 
         return PhotonicNeuronArray(
                 inputShape,
@@ -165,6 +174,11 @@ class PhotonicNeuronArrayMapper:
 
 
 class PhotonicConvolverMapper:
+    """
+    Class that builds an entire photonic convolver that is capabale of
+    performing a full convolution.
+    """
+
     def build(image, kernel, padding=0, stride=1, power=1):
         laserDiodeArray = LaserDiodeArrayMapper.build(
                 kernel.shape, image.shape, power)

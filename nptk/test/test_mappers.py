@@ -109,7 +109,7 @@ def test_PhotonicNeuronArrayMapperSumAll():
         ])
     pa = PhotonicNeuronArrayMapper.build(
             inputs.shape, kernel, 0, 1)
-    assert pa.connections.shape == (1, 1)
+    assert pa.connections.shape == (1, 1, 1)
     convolved = pa.step(inputs)
     expected = inputs.sum()
     assert np.abs(convolved - expected) < 1e3
@@ -130,26 +130,56 @@ def test_PhotonicNeuronArrayMapperUnity():
     # Keep dimensonality
     pa = PhotonicNeuronArrayMapper.build(
             inputs.shape, kernel, 1, 1)
-    assert pa.connections.shape == (3, 3)
+    assert pa.connections.shape == (3, 3, 1)
     convolved = pa.step(inputs)
-    expected = inputs
+    expected = inputs.reshape((inputs.shape[0], inputs.shape[1], 1))
     assert np.all(np.abs(convolved - expected) < 0.01)
 
     # Select every other pair
     pa = PhotonicNeuronArrayMapper.build(
             inputs.shape, kernel, 1, 2)
-    assert pa.connections.shape == (2, 2)
+    assert pa.connections.shape == (2, 2, 1)
     convolved = pa.step(inputs)
     expected = np.array([
         [1, 3],
         [7, 9]])
+    expected = expected.reshape((expected.shape[0], expected.shape[1], 1))
+
     assert np.all(np.abs(convolved - expected) < 0.01)
 
     # Select only first element, non perfectly aligning
     # convolution.
     pa = PhotonicNeuronArrayMapper.build(
             inputs.shape, kernel, 1, 3)
-    assert pa.connections.shape == (1, 1)
+    assert pa.connections.shape == (1, 1, 1)
     convolved = pa.step(inputs)
     expected = 1
+    assert np.all(np.abs(convolved - expected) < 0.01)
+
+
+def test_PhotonicNeuronArrayMapperMulti():
+    # Use multiple kernels.
+    k1 = np.array([
+        [0, 0, 0],
+        [0, 1, 0],
+        [0, 0, 0]
+        ])
+
+    k2 = np.ones((3, 3))
+    kernel = np.dstack((k1, k2))
+    inputs = np.array([
+        [1, 2, 3],
+        [4, 5, 6],
+        [7, 8, 9]
+        ])
+
+    # Keep dimensonality
+    pa = PhotonicNeuronArrayMapper.build(
+            inputs.shape, kernel, 0, 1)
+    assert pa.connections.shape == (1, 1, 2)
+
+    convolved = pa.step(inputs)
+    assert convolved.shape[2] == 2
+
+    expected = np.array([5, inputs.sum()])
     assert np.all(np.abs(convolved - expected) < 0.01)

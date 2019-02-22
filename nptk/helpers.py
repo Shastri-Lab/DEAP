@@ -39,5 +39,6 @@ def getOutputShape(inputShape, kernelShape, padding, stride):
 
     outputWidth = int(outputWidth)
     outputHeight = int(outputHeight)
+    outputDepth = kernelShape[2]
 
-    return (outputHeight, outputWidth)
+    return (outputHeight, outputWidth, outputDepth)

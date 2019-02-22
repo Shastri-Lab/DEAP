@@ -121,7 +121,7 @@ class PhotonicNeuronArray:
         assert inputShape == sharedCounts.shape
         self.sharedCounts = sharedCounts
         self.neurons = neurons
-        self._output = np.empty(self.connections.shape)
+        self._output = np.empty_like(self.connections)
 
     def step(self, intenstiyMatrix):
         intenstiyMatrix = np.asarray(intenstiyMatrix)
@@ -135,11 +135,13 @@ class PhotonicNeuronArray:
 
         for row in range(self.connections.shape[0]):
             for col in range(self.connections.shape[1]):
-                conn = self.connections[row, col]
-                inputs = intenstiyMatrix[conn[:, 0], conn[:, 1]]
-                sharedCount = self.sharedCounts[conn[:, 0], conn[:, 1]]
-                self._output[row, col] = self.neurons[row, col].step(
-                    (inputs / sharedCount).ravel())
+                for depth in range(self.connections.shape[2]):
+                    conn = self.connections[row, col, depth]
+                    inputs = intenstiyMatrix[conn[:, 0], conn[:, 1]]
+                    sharedCount = self.sharedCounts[conn[:, 0], conn[:, 1]]
+                    self._output[row, col, depth] = \
+                        self.neurons[row, col, depth].step(
+                            (inputs / sharedCount).ravel())
 
         return self._output
 
