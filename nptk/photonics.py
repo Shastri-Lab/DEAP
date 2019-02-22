@@ -121,7 +121,7 @@ class PhotonicNeuronArray:
         assert inputShape == sharedCounts.shape
         self.sharedCounts = sharedCounts
         self.neurons = neurons
-        self._output = np.empty_like(self.connections)
+        self._output = np.empty(self.connections.shape)
 
     def step(self, intenstiyMatrix):
         intenstiyMatrix = np.asarray(intenstiyMatrix)
