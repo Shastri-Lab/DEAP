@@ -108,10 +108,13 @@ def test_PhotonicNeuronArrayMapperSumAll():
         [7, 8, 9]
         ])
     pa = PhotonicNeuronArrayMapper.build(
-            inputs.shape, kernel, 0, 1)
-    assert pa.connections.shape == (1, 1, 1)
+            inputs.shape, kernel, 1)
+    assert pa.connections.shape == (1, 1, 1, 9, 2)
     convolved = pa.step(inputs)
     expected = inputs.sum()
+    print(convolved)
+    print(expected)
+    print(pa.connections[0, 0, 0])
     assert np.abs(convolved - expected) < 1e3
 
 
@@ -126,20 +129,21 @@ def test_PhotonicNeuronArrayMapperUnity():
         [4, 5, 6],
         [7, 8, 9]
         ])
-
     # Keep dimensonality
+    paddedInputs = np.pad(inputs, (1, 1), 'constant')
+
     pa = PhotonicNeuronArrayMapper.build(
-            inputs.shape, kernel, 1, 1)
-    assert pa.connections.shape == (3, 3, 1)
-    convolved = pa.step(inputs)
+            paddedInputs.shape, kernel, 1)
+    assert pa.connections.shape == (3, 3, 1, 9, 2)
+    convolved = pa.step(paddedInputs)
     expected = inputs.reshape((inputs.shape[0], inputs.shape[1], 1))
     assert np.all(np.abs(convolved - expected) < 0.01)
 
     # Select every other pair
     pa = PhotonicNeuronArrayMapper.build(
-            inputs.shape, kernel, 1, 2)
-    assert pa.connections.shape == (2, 2, 1)
-    convolved = pa.step(inputs)
+            paddedInputs.shape, kernel, 2)
+    assert pa.connections.shape == (2, 2, 1, 9, 2)
+    convolved = pa.step(paddedInputs)
     expected = np.array([
         [1, 3],
         [7, 9]])
@@ -150,9 +154,9 @@ def test_PhotonicNeuronArrayMapperUnity():
     # Select only first element, non perfectly aligning
     # convolution.
     pa = PhotonicNeuronArrayMapper.build(
-            inputs.shape, kernel, 1, 3)
-    assert pa.connections.shape == (1, 1, 1)
-    convolved = pa.step(inputs)
+            paddedInputs.shape, kernel, 3)
+    assert pa.connections.shape == (1, 1, 1, 9, 2)
+    convolved = pa.step(paddedInputs)
     expected = 1
     assert np.all(np.abs(convolved - expected) < 0.01)
 
@@ -173,10 +177,9 @@ def test_PhotonicNeuronArrayMapperMulti():
         [7, 8, 9]
         ])
 
-    # Keep dimensonality
     pa = PhotonicNeuronArrayMapper.build(
-            inputs.shape, kernel, 0, 1)
-    assert pa.connections.shape == (1, 1, 2)
+            inputs.shape, kernel, 1)
+    assert pa.connections.shape == (1, 1, 2, 9, 2)
 
     convolved = pa.step(inputs)
     assert convolved.shape[2] == 2

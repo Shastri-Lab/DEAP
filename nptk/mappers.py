@@ -44,7 +44,7 @@ class NeuronMapper:
         NeuronMapper._phase = None
         NeuronMapper._dropput = None
 
-    def build(weights):
+    def computePhaseShifts(weights):
         if NeuronMapper._phase is None or NeuronMapper._dropput is None:
             # Compute phase and dropput mapping if it hasn't been done
             # already.
@@ -68,7 +68,23 @@ class NeuronMapper:
             index = bisect_min(NeuronMapper._dropput, desiredDropput)
             phaseShifts[i] = NeuronMapper._phase[index]
 
+        return phaseShifts, outputGain
+
+    def build(weights):
+        """
+        Creates a new photonic neuron from a set of weights
+        """
+        phaseShifts, outputGain = \
+            NeuronMapper.computePhaseShifts(weights)
         return PhotonicNeuron(phaseShifts, outputGain)
+
+    def updateWeights(photonicNeuron, weights):
+        """
+        Updates an existing photonic neuron from a set of weights
+        """
+        phaseShifts, outputGain = \
+            NeuronMapper.computePhaseShifts(weights)
+        photonicNeuron._update(phaseShifts, outputGain)
 
 
 class LaserDiodeArrayMapper:
@@ -93,16 +109,21 @@ class ModulatorArrayMapper:
     """
     _mrm = MRMTransferFunction()
 
-    def calculatePhaseShifts(intenstiyMatrix):
+    def computePhaseShifts(intenstiyMatrix):
         assert not np.any(intenstiyMatrix < 0)
         normalized = intenstiyMatrix / max(np.amax(intenstiyMatrix), 1)
         return ModulatorArrayMapper._mrm.phaseFromThroughput(
-                normalized)
+                    normalized)
 
-    def build(intenstiyMatrix):
+    def build(inputs):
         phaseShifts = \
-            ModulatorArrayMapper.calculatePhaseShifts(intenstiyMatrix)
+            ModulatorArrayMapper.computePhaseShifts(inputs)
         return ModulatorArray(phaseShifts)
+
+    def updateInputs(modulatorArray, inputs):
+        phaseShifts = \
+            ModulatorArrayMapper.computePhaseShifts(inputs)
+        modulatorArray._update(phaseShifts)
 
 
 class PhotonicNeuronArrayMapper:
@@ -111,47 +132,40 @@ class PhotonicNeuronArrayMapper:
     """
 
     def _createConnectionGraph(
-            inputShape, kernel, padding, stride, outputShape):
-        connections = np.full(outputShape, fill_value=None, dtype=object)
-        neuralWeights = np.full(outputShape, fill_value=None, dtype=object)
+            inputShape, kernel, stride, outputShape):
+        connections = np.full(
+                outputShape + (kernel.shape[0] * kernel.shape[1], 2),
+                fill_value=-1)
         counts = np.zeros(inputShape)
         filterSize = kernel.shape[0]
 
         for row in range(connections.shape[0]):
             for col in range(connections.shape[1]):
-                inputRow = row * stride
-                inputCol = col * stride
-
-                rowStart = max(0, inputRow - padding)
-                colStart = max(0, inputCol - padding)
-                colEnd = min(inputCol + filterSize - padding, inputShape[1])
-                rowEnd = min(inputRow + filterSize - padding, inputShape[0])
+                rowStart = row * stride
+                colStart = col * stride
+                colEnd = min(colStart + filterSize, inputShape[1])
+                rowEnd = min(rowStart + filterSize, inputShape[0])
                 R, C = np.mgrid[rowStart:rowEnd, colStart:colEnd]
                 counts[rowStart:rowEnd, colStart:colEnd] += kernel.shape[2]
 
-                for depth in range(connections.shape[2]):
-                    neuralWeights[row, col, depth] = \
-                        kernel[
-                            rowStart-inputRow+padding:rowEnd-inputRow+padding,
-                            colStart-inputCol+padding:colEnd-inputCol+padding,
-                            depth].ravel()
-                    connections[row, col, depth] = \
-                        np.column_stack((R.ravel(), C.ravel()))
+                # for depth in range(connections.shape[2]):
+                conn = np.column_stack((R.ravel(), C.ravel()))
+                connections[row, col, :, :conn.shape[0], ...] = conn
 
-        return connections, neuralWeights, counts
+        return connections, counts
 
-    def build(inputShape, kernel, padding=0, stride=1):
+    def build(inputShape, kernel, stride=1):
         assert kernel.ndim == 2 or kernel.ndim == 3
         assert kernel.shape[0] == kernel.shape[1]
 
         if kernel.ndim != 3:
             # Add a depth of 1 if only a single kernel is provided.
-            kernel = np.reshape(kernel, (kernel.shape[0], kernel.shape[1], 1))
+            kernel = np.expand_dims(kernel, 2)
 
-        outputShape = getOutputShape(inputShape, kernel.shape, padding, stride)
-        connections, neuralWeights, sharedCounts = \
+        outputShape = getOutputShape(inputShape, kernel.shape, 0, stride)
+        connections, sharedCounts = \
             PhotonicNeuronArrayMapper._createConnectionGraph(
-                inputShape, kernel, padding, stride, outputShape)
+                inputShape, kernel, stride, outputShape)
 
         neurons = np.full(outputShape, fill_value=None, dtype=object)
         for row in range(outputShape[0]):
@@ -162,9 +176,19 @@ class PhotonicNeuronArrayMapper:
                     # Get the number of times the  inupts were shared
                     count = sharedCounts[conn[:, 0], conn[:, 1]].ravel()
 
-                    # Scale the weight accordingly
-                    weights = neuralWeights[row, col, depth] * count
-                    neurons[row, col, depth] = NeuronMapper.build(weights)
+                    # Assign the weights using the kernel
+                    rDiff = -row * stride
+                    cDiff = -col * stride
+                    weights = count * \
+                        kernel[conn[:, 0] + rDiff, conn[:, 1] + cDiff, depth] \
+                        .ravel()
+
+                    if neurons[row, col, depth] is None:
+                        neurons[row, col, depth] = \
+                            NeuronMapper.build(weights)
+                    else:
+                        NeuronMapper.updateWeights(
+                            neurons[row, col, depth], weights)
 
         return PhotonicNeuronArray(
                 inputShape,
@@ -179,13 +203,13 @@ class PhotonicConvolverMapper:
     performing a full convolution.
     """
 
-    def build(image, kernel, padding=0, stride=1, power=1):
+    def build(image, kernel, stride=1, power=1):
         laserDiodeArray = LaserDiodeArrayMapper.build(
                 kernel.shape, image.shape, power)
         modulatorArray = ModulatorArrayMapper.build(
                 image)
         photonicNeuronArray = PhotonicNeuronArrayMapper.build(
-                image.shape, kernel, padding, stride)
+                image.shape, kernel, stride)
 
         return PhotonicConvolver(
                 laserDiodeArray,

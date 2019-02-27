@@ -30,7 +30,12 @@ def bisect_min(array, val):
 def getOutputShape(inputShape, kernelShape, padding, stride):
     """
     Given an input shape, kernel shape, padding and stride, return the
-    dimensions of the convoled image.
+    dimensions of the convoled image. Will throw an error if the
+    dimensionalities do not match.
+
+    The inputShape can have 2 or 3 dimensions.
+    The kernelShape can 3 or 4 dimensions
+
     """
     assert kernelShape[0] == kernelShape[1]
     filterSize = kernelShape[0]
@@ -39,6 +44,16 @@ def getOutputShape(inputShape, kernelShape, padding, stride):
 
     outputWidth = int(outputWidth)
     outputHeight = int(outputHeight)
-    outputDepth = kernelShape[2]
+
+    if len(inputShape) == 2:
+        # In the case where the input shape has an implied depth of 1,
+        # the output depth is the depth of the kernel.
+        assert len(kernelShape) == 3
+        outputDepth = kernelShape[2]
+    else:
+        # In the case where the input shape has an an explicit depth,
+        # the output depth is the number of kernels.
+        assert kernelShape[2] == inputShape[2]
+        outputDepth = kernelShape[3]
 
     return (outputHeight, outputWidth, outputDepth)

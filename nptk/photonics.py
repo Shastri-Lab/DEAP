@@ -91,8 +91,17 @@ class PhotonicNeuron:
     """
     def __init__(self, phaseShifts, outputGain):
         self.phaseShifts = np.asarray(phaseShifts)
-        self.outputGain = outputGain
+        self.outputGain = np.asarray(outputGain)
         self.inputSize = phaseShifts.size
+
+        mrr = MRRTransferFunction()
+        self._throughput = mrr.throughput(self.phaseShifts)
+        self._dropput = mrr.dropput(self.phaseShifts)
+
+    def _update(self, newPhaseShifts, newOutputGain):
+        assert self.inputSize == newPhaseShifts.size
+        self.phaseShifts = np.asarray(newPhaseShifts)
+        self.outputGain = np.asarray(newOutputGain)
 
         mrr = MRRTransferFunction()
         self._throughput = mrr.throughput(self.phaseShifts)
@@ -116,12 +125,12 @@ class PhotonicNeuron:
 class PhotonicNeuronArray:
     def __init__(self, inputShape, connections, neurons, sharedCounts):
         self.inputShape = inputShape
-        assert neurons.shape == connections.shape
+        assert neurons.shape == connections.shape[:3]
         self.connections = connections
         assert inputShape == sharedCounts.shape
         self.sharedCounts = sharedCounts
         self.neurons = neurons
-        self._output = np.empty(self.connections.shape)
+        self._output = np.empty(self.connections.shape[:3])
 
     def step(self, intenstiyMatrix):
         intenstiyMatrix = np.asarray(intenstiyMatrix)
@@ -182,7 +191,7 @@ class ModulatorArray:
 
         return self._throughput * intensities
 
-    def updatePhaseShifts(self, newPhaseShifts):
+    def _update(self, newPhaseShifts):
         self.phaseShifts = np.asarray(newPhaseShifts)
         self._throughput = self._mrm.throughput(self.phaseShifts)
 
