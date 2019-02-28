@@ -1,6 +1,6 @@
 import numpy as np
 import matplotlib.pyplot as plt
-from nptk.helpers import bisect_min
+from deap.helpers import bisect_min
 
 
 class MRRTransferFunction:

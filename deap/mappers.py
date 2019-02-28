@@ -1,13 +1,13 @@
 import numpy as np
 
-from nptk.helpers import bisect_min, getOutputShape
-from nptk.photonics import MRRTransferFunction
-from nptk.photonics import MRMTransferFunction
-from nptk.photonics import PhotonicNeuron
-from nptk.photonics import LaserDiodeArray
-from nptk.photonics import ModulatorArray
-from nptk.photonics import PhotonicNeuronArray
-from nptk.photonics import PhotonicConvolver
+from deap.helpers import bisect_min, getOutputShape
+from deap.photonics import MRRTransferFunction
+from deap.photonics import MRMTransferFunction
+from deap.photonics import PhotonicNeuron
+from deap.photonics import LaserDiodeArray
+from deap.photonics import ModulatorArray
+from deap.photonics import PhotonicNeuronArray
+from deap.photonics import PhotonicConvolver
 
 
 class NeuronMapper:

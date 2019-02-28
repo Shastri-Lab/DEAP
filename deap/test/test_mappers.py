@@ -1,8 +1,8 @@
 import numpy as np
-from nptk.mappers import NeuronMapper
-from nptk.mappers import LaserDiodeArrayMapper
-from nptk.mappers import ModulatorArrayMapper
-from nptk.mappers import PhotonicNeuronArrayMapper
+from deap.mappers import NeuronMapper
+from deap.mappers import LaserDiodeArrayMapper
+from deap.mappers import ModulatorArrayMapper
+from deap.mappers import PhotonicNeuronArrayMapper
 
 
 def test_NeuronMapperTwoSum():

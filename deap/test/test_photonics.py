@@ -1,6 +1,6 @@
 import numpy as np
-from nptk.photonics import MRRTransferFunction, PhotonicNeuron
-from nptk.photonics import MRMTransferFunction
+from deap.photonics import MRRTransferFunction, PhotonicNeuron
+from deap.photonics import MRMTransferFunction
 
 
 def test_MRRTransferFunction():
