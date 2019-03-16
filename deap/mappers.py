@@ -3,17 +3,17 @@ import numpy as np
 from deap.helpers import bisect_min, getOutputShape
 from deap.photonics import MRRTransferFunction
 from deap.photonics import MRMTransferFunction
-from deap.photonics import PhotonicNeuron
+from deap.photonics import PWB
 from deap.photonics import LaserDiodeArray
 from deap.photonics import ModulatorArray
-from deap.photonics import PhotonicNeuronArray
+from deap.photonics import PWBArray
 from deap.photonics import PhotonicConvolver
 
 
 class NeuronMapper:
     """
     Class that that maps a set of weights to an equivalent
-    photonic neuron.
+    photonic pwb.
     """
     def _precomputeDropputToPhaseMapping(precision):
         """
@@ -31,7 +31,7 @@ class NeuronMapper:
     _precision = 127
 
     # Precomputed phase and dropput values for a given precision.
-    # These will be populated when a neuron is created.
+    # These will be populated when a pwb is created.
     _phase = None
     _dropput = None
 
@@ -72,15 +72,15 @@ class NeuronMapper:
 
     def build(weights):
         """
-        Creates a new photonic neuron from a set of weights
+        Creates a new photonic pwb from a set of weights
         """
         phaseShifts, outputGain = \
             NeuronMapper.computePhaseShifts(weights)
-        return PhotonicNeuron(phaseShifts, outputGain)
+        return PWB(phaseShifts, outputGain)
 
     def updateWeights(photonicNeuron, weights):
         """
-        Updates an existing photonic neuron from a set of weights
+        Updates an existing photonic pwb from a set of weights
         """
         phaseShifts, outputGain = \
             NeuronMapper.computePhaseShifts(weights)
@@ -126,9 +126,9 @@ class ModulatorArrayMapper:
         modulatorArray._update(phaseShifts)
 
 
-class PhotonicNeuronArrayMapper:
+class PWBArrayMapper:
     """
-    Class that maps a convolved matrix using photonic neurons
+    Class that maps a convolved matrix using photonic pwbs
     """
 
     def _createConnectionGraph(
@@ -164,10 +164,10 @@ class PhotonicNeuronArrayMapper:
 
         outputShape = getOutputShape(inputShape, kernel.shape, 0, stride)
         connections, sharedCounts = \
-            PhotonicNeuronArrayMapper._createConnectionGraph(
+            PWBArrayMapper._createConnectionGraph(
                 inputShape, kernel, stride, outputShape)
 
-        neurons = np.full(outputShape, fill_value=None, dtype=object)
+        pwbs = np.full(outputShape, fill_value=None, dtype=object)
         for row in range(outputShape[0]):
             for col in range(outputShape[1]):
                 for depth in range(outputShape[2]):
@@ -183,17 +183,17 @@ class PhotonicNeuronArrayMapper:
                         kernel[conn[:, 0] + rDiff, conn[:, 1] + cDiff, depth] \
                         .ravel()
 
-                    if neurons[row, col, depth] is None:
-                        neurons[row, col, depth] = \
+                    if pwbs[row, col, depth] is None:
+                        pwbs[row, col, depth] = \
                             NeuronMapper.build(weights)
                     else:
                         NeuronMapper.updateWeights(
-                            neurons[row, col, depth], weights)
+                            pwbs[row, col, depth], weights)
 
-        return PhotonicNeuronArray(
+        return PWBArray(
                 inputShape,
                 connections,
-                neurons,
+                pwbs,
                 sharedCounts)
 
 
@@ -208,7 +208,7 @@ class PhotonicConvolverMapper:
                 kernel.shape, image.shape, power)
         modulatorArray = ModulatorArrayMapper.build(
                 image)
-        photonicNeuronArray = PhotonicNeuronArrayMapper.build(
+        photonicNeuronArray = PWBArrayMapper.build(
                 image.shape, kernel, stride)
 
         return PhotonicConvolver(

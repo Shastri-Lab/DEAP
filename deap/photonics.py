@@ -85,9 +85,9 @@ class MRMTransferFunction:
         return ans
 
 
-class PhotonicNeuron:
+class PWB:
     """
-    A simple, time-independent model of a neuron.
+    A simple, time-independent model of a pwb.
     """
     def __init__(self, phaseShifts, outputGain):
         self.phaseShifts = np.asarray(phaseShifts)
@@ -122,14 +122,14 @@ class PhotonicNeuron:
         return self.outputGain * photodiodeVoltage
 
 
-class PhotonicNeuronArray:
-    def __init__(self, inputShape, connections, neurons, sharedCounts):
+class PWBArray:
+    def __init__(self, inputShape, connections, pwbs, sharedCounts):
         self.inputShape = inputShape
-        assert neurons.shape == connections.shape[:3]
+        assert pwbs.shape == connections.shape[:3]
         self.connections = connections
         assert inputShape == sharedCounts.shape
         self.sharedCounts = sharedCounts
-        self.neurons = neurons
+        self.pwbs = pwbs
         self._output = np.empty(self.connections.shape[:3])
 
     def step(self, intenstiyMatrix):
@@ -149,7 +149,7 @@ class PhotonicNeuronArray:
                     inputs = intenstiyMatrix[conn[:, 0], conn[:, 1]]
                     sharedCount = self.sharedCounts[conn[:, 0], conn[:, 1]]
                     self._output[row, col, depth] = \
-                        self.neurons[row, col, depth].step(
+                        self.pwbs[row, col, depth].step(
                             (inputs / sharedCount).ravel())
 
         return self._output

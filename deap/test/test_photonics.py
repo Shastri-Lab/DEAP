@@ -1,5 +1,5 @@
 import numpy as np
-from deap.photonics import MRRTransferFunction, PhotonicNeuron
+from deap.photonics import MRRTransferFunction, PWB
 from deap.photonics import MRMTransferFunction
 
 
@@ -41,8 +41,8 @@ def test_Photonics():
     inputs = [0, 1, 2, 3, 4, 5, 6, 7]
     gain = 1
 
-    neuron = PhotonicNeuron(phase, gain)
-    computed = neuron.step(inputs)
+    pwb = PWB(phase, gain)
+    computed = pwb.step(inputs)
 
     mrr = MRRTransferFunction()
     expected = gain * \
@@ -52,6 +52,6 @@ def test_Photonics():
     assert computed == expected
 
     gain = 0
-    neuron = PhotonicNeuron(phase, gain)
-    computed = neuron.step(inputs)
+    pwb = PWB(phase, gain)
+    computed = pwb.step(inputs)
     assert computed == 0

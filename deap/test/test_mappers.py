@@ -2,16 +2,16 @@ import numpy as np
 from deap.mappers import NeuronMapper
 from deap.mappers import LaserDiodeArrayMapper
 from deap.mappers import ModulatorArrayMapper
-from deap.mappers import PhotonicNeuronArrayMapper
+from deap.mappers import PWBArrayMapper
 
 
 def test_NeuronMapperTwoSum():
     weights = np.array([1, 1])
-    neuron = NeuronMapper.build(weights)
-    assert neuron.outputGain == 1
+    pwb = NeuronMapper.build(weights)
+    assert pwb.outputGain == 1
 
     for v in ([1, 1], [2, 2], [-1, 1], [10, 1]):
-        computed = neuron.step(v)
+        computed = pwb.step(v)
         expected = np.dot(weights, v)
         assert np.abs(computed - expected < 1e-4)
 
@@ -29,11 +29,11 @@ def test_NeuronMapperUnity():
 
 def test_NeuronMapperNegative():
     weights = np.array([-1])
-    neuron = NeuronMapper.build(weights)
-    assert neuron.outputGain == 1
+    pwb = NeuronMapper.build(weights)
+    assert pwb.outputGain == 1
 
     for v in ([1], [2], [-1], [10]):
-        computed = neuron.step(v)
+        computed = pwb.step(v)
         expected = np.dot(weights, v)
         err = (expected - computed) / expected
         assert np.abs(err < 1e-3)
@@ -52,10 +52,10 @@ def test_NeuronMapperNull():
 
 def test_NeuronMapplerMultiple():
     weights = np.array([2, -3, 4, 0, 9])
-    neuron = NeuronMapper.build(weights)
+    pwb = NeuronMapper.build(weights)
 
     for v in ([1, 10, 3, 2, 0], [1, 1, 1, 1, 1], [-7, 0.214, 22, 0.7, 2]):
-        computed = neuron.step(v)
+        computed = pwb.step(v)
         expected = np.dot(weights, v)
         err = (expected - computed) / expected
         assert err < 2e-3
@@ -100,14 +100,14 @@ def test_ModulatorArrayMapper():
     assert np.all(err < 1e-9)
 
 
-def test_PhotonicNeuronArrayMapperSumAll():
+def test_PWBArrayMapperSumAll():
     kernel = np.ones((3, 3))
     inputs = np.array([
         [1, 2, 3],
         [4, 5, 6],
         [7, 8, 9]
         ])
-    pa = PhotonicNeuronArrayMapper.build(
+    pa = PWBArrayMapper.build(
             inputs.shape, kernel, 1)
     assert pa.connections.shape == (1, 1, 1, 9, 2)
     convolved = pa.step(inputs)
@@ -118,7 +118,7 @@ def test_PhotonicNeuronArrayMapperSumAll():
     assert np.abs(convolved - expected) < 1e3
 
 
-def test_PhotonicNeuronArrayMapperUnity():
+def test_PWBArrayMapperUnity():
     kernel = np.array([
         [0, 0, 0],
         [0, 1, 0],
@@ -132,7 +132,7 @@ def test_PhotonicNeuronArrayMapperUnity():
     # Keep dimensonality
     paddedInputs = np.pad(inputs, (1, 1), 'constant')
 
-    pa = PhotonicNeuronArrayMapper.build(
+    pa = PWBArrayMapper.build(
             paddedInputs.shape, kernel, 1)
     assert pa.connections.shape == (3, 3, 1, 9, 2)
     convolved = pa.step(paddedInputs)
@@ -140,7 +140,7 @@ def test_PhotonicNeuronArrayMapperUnity():
     assert np.all(np.abs(convolved - expected) < 0.01)
 
     # Select every other pair
-    pa = PhotonicNeuronArrayMapper.build(
+    pa = PWBArrayMapper.build(
             paddedInputs.shape, kernel, 2)
     assert pa.connections.shape == (2, 2, 1, 9, 2)
     convolved = pa.step(paddedInputs)
@@ -153,7 +153,7 @@ def test_PhotonicNeuronArrayMapperUnity():
 
     # Select only first element, non perfectly aligning
     # convolution.
-    pa = PhotonicNeuronArrayMapper.build(
+    pa = PWBArrayMapper.build(
             paddedInputs.shape, kernel, 3)
     assert pa.connections.shape == (1, 1, 1, 9, 2)
     convolved = pa.step(paddedInputs)
@@ -161,7 +161,7 @@ def test_PhotonicNeuronArrayMapperUnity():
     assert np.all(np.abs(convolved - expected) < 0.01)
 
 
-def test_PhotonicNeuronArrayMapperMulti():
+def test_PWBArrayMapperMulti():
     # Use multiple kernels.
     k1 = np.array([
         [0, 0, 0],
@@ -177,7 +177,7 @@ def test_PhotonicNeuronArrayMapperMulti():
         [7, 8, 9]
         ])
 
-    pa = PhotonicNeuronArrayMapper.build(
+    pa = PWBArrayMapper.build(
             inputs.shape, kernel, 1)
     assert pa.connections.shape == (1, 1, 2, 9, 2)
 
