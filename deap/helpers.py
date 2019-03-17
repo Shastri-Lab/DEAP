@@ -38,22 +38,11 @@ def getOutputShape(inputShape, kernelShape, padding, stride):
 
     """
     assert kernelShape[0] == kernelShape[1]
+
     filterSize = kernelShape[0]
     outputWidth = (inputShape[1] - filterSize + 2 * padding) / stride + 1
     outputHeight = (inputShape[0] - filterSize + 2 * padding) / stride + 1
-
     outputWidth = int(outputWidth)
     outputHeight = int(outputHeight)
 
-    if len(inputShape) == 2:
-        # In the case where the input shape has an implied depth of 1,
-        # the output depth is the depth of the kernel.
-        assert len(kernelShape) == 3
-        outputDepth = kernelShape[2]
-    else:
-        # In the case where the input shape has an an explicit depth,
-        # the output depth is the number of kernels.
-        assert kernelShape[2] == inputShape[2]
-        outputDepth = kernelShape[3]
-
-    return (outputHeight, outputWidth, outputDepth)
+    return (outputHeight, outputWidth)

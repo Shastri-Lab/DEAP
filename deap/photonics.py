@@ -87,7 +87,7 @@ class MRMTransferFunction:
 
 class PWB:
     """
-    A simple, time-independent model of a pwb.
+    A simple, time-independent model of a photonic weight bank.
     """
     def __init__(self, phaseShifts, outputGain):
         self.phaseShifts = np.asarray(phaseShifts)
@@ -125,12 +125,12 @@ class PWB:
 class PWBArray:
     def __init__(self, inputShape, connections, pwbs, sharedCounts):
         self.inputShape = inputShape
-        assert pwbs.shape == connections.shape[:3]
+        assert pwbs.shape == connections.shape[:2]
         self.connections = connections
         assert inputShape == sharedCounts.shape
         self.sharedCounts = sharedCounts
         self.pwbs = pwbs
-        self._output = np.empty(self.connections.shape[:3])
+        self._output = np.empty(self.connections.shape[:2])
 
     def step(self, intenstiyMatrix):
         intenstiyMatrix = np.asarray(intenstiyMatrix)
@@ -142,15 +142,15 @@ class PWBArray:
                     self.inputShape
                 )
 
+        self._output.fill(0)
         for row in range(self.connections.shape[0]):
             for col in range(self.connections.shape[1]):
-                for depth in range(self.connections.shape[2]):
-                    conn = self.connections[row, col, depth]
-                    inputs = intenstiyMatrix[conn[:, 0], conn[:, 1]]
-                    sharedCount = self.sharedCounts[conn[:, 0], conn[:, 1]]
-                    self._output[row, col, depth] = \
-                        self.pwbs[row, col, depth].step(
-                            (inputs / sharedCount).ravel())
+                conn = self.connections[row, col]
+                inputs = intenstiyMatrix[conn[:, 0], conn[:, 1]]
+                sharedCount = self.sharedCounts[conn[:, 0], conn[:, 1]]
+                self._output[row, col] += \
+                    self.pwbs[row, col].step(
+                        (inputs / sharedCount).ravel())
 
         return self._output
 

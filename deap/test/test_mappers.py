@@ -109,12 +109,9 @@ def test_PWBArrayMapperSumAll():
         ])
     pa = PWBArrayMapper.build(
             inputs.shape, kernel, 1)
-    assert pa.connections.shape == (1, 1, 1, 9, 2)
+    assert pa.connections.shape == (1, 1, 9, 2)
     convolved = pa.step(inputs)
     expected = inputs.sum()
-    print(convolved)
-    print(expected)
-    print(pa.connections[0, 0, 0])
     assert np.abs(convolved - expected) < 1e3
 
 
@@ -134,20 +131,20 @@ def test_PWBArrayMapperUnity():
 
     pa = PWBArrayMapper.build(
             paddedInputs.shape, kernel, 1)
-    assert pa.connections.shape == (3, 3, 1, 9, 2)
+    assert pa.connections.shape == (3, 3, 9, 2)
     convolved = pa.step(paddedInputs)
-    expected = inputs.reshape((inputs.shape[0], inputs.shape[1], 1))
+    expected = inputs
     assert np.all(np.abs(convolved - expected) < 0.01)
 
     # Select every other pair
     pa = PWBArrayMapper.build(
             paddedInputs.shape, kernel, 2)
-    assert pa.connections.shape == (2, 2, 1, 9, 2)
+    assert pa.connections.shape == (2, 2, 9, 2)
     convolved = pa.step(paddedInputs)
     expected = np.array([
         [1, 3],
         [7, 9]])
-    expected = expected.reshape((expected.shape[0], expected.shape[1], 1))
+    expected = expected.reshape((expected.shape[0], expected.shape[1]))
 
     assert np.all(np.abs(convolved - expected) < 0.01)
 
@@ -155,34 +152,7 @@ def test_PWBArrayMapperUnity():
     # convolution.
     pa = PWBArrayMapper.build(
             paddedInputs.shape, kernel, 3)
-    assert pa.connections.shape == (1, 1, 1, 9, 2)
+    assert pa.connections.shape == (1, 1, 9, 2)
     convolved = pa.step(paddedInputs)
     expected = 1
-    assert np.all(np.abs(convolved - expected) < 0.01)
-
-
-def test_PWBArrayMapperMulti():
-    # Use multiple kernels.
-    k1 = np.array([
-        [0, 0, 0],
-        [0, 1, 0],
-        [0, 0, 0]
-        ])
-
-    k2 = np.ones((3, 3))
-    kernel = np.dstack((k1, k2))
-    inputs = np.array([
-        [1, 2, 3],
-        [4, 5, 6],
-        [7, 8, 9]
-        ])
-
-    pa = PWBArrayMapper.build(
-            inputs.shape, kernel, 1)
-    assert pa.connections.shape == (1, 1, 2, 9, 2)
-
-    convolved = pa.step(inputs)
-    assert convolved.shape[2] == 2
-
-    expected = np.array([5, inputs.sum()])
     assert np.all(np.abs(convolved - expected) < 0.01)

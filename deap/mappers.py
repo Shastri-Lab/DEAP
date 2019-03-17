@@ -146,21 +146,15 @@ class PWBArrayMapper:
                 colEnd = min(colStart + filterSize, inputShape[1])
                 rowEnd = min(rowStart + filterSize, inputShape[0])
                 R, C = np.mgrid[rowStart:rowEnd, colStart:colEnd]
-                counts[rowStart:rowEnd, colStart:colEnd] += kernel.shape[2]
-
-                # for depth in range(connections.shape[2]):
+                counts[rowStart:rowEnd, colStart:colEnd] += 1
                 conn = np.column_stack((R.ravel(), C.ravel()))
-                connections[row, col, :, :conn.shape[0], ...] = conn
+                connections[row, col, :conn.shape[0], :] = conn
 
         return connections, counts
 
     def build(inputShape, kernel, stride=1):
         assert kernel.ndim == 2 or kernel.ndim == 3
         assert kernel.shape[0] == kernel.shape[1]
-
-        if kernel.ndim != 3:
-            # Add a depth of 1 if only a single kernel is provided.
-            kernel = np.expand_dims(kernel, 2)
 
         outputShape = getOutputShape(inputShape, kernel.shape, 0, stride)
         connections, sharedCounts = \
@@ -170,25 +164,24 @@ class PWBArrayMapper:
         pwbs = np.full(outputShape, fill_value=None, dtype=object)
         for row in range(outputShape[0]):
             for col in range(outputShape[1]):
-                for depth in range(outputShape[2]):
-                    conn = connections[row, col, depth]
+                conn = connections[row, col]
 
-                    # Get the number of times the  inupts were shared
-                    count = sharedCounts[conn[:, 0], conn[:, 1]].ravel()
+                # Get the number of times the  inupts were shared
+                count = sharedCounts[conn[:, 0], conn[:, 1]].ravel()
 
-                    # Assign the weights using the kernel
-                    rDiff = -row * stride
-                    cDiff = -col * stride
-                    weights = count * \
-                        kernel[conn[:, 0] + rDiff, conn[:, 1] + cDiff, depth] \
-                        .ravel()
+                # Assign the weights using the kernel
+                rDiff = row * stride
+                cDiff = col * stride
+                weights = count * \
+                    kernel[conn[:, 0] - rDiff, conn[:, 1] - cDiff] \
+                    .ravel()
 
-                    if pwbs[row, col, depth] is None:
-                        pwbs[row, col, depth] = \
-                            NeuronMapper.build(weights)
-                    else:
-                        NeuronMapper.updateWeights(
-                            pwbs[row, col, depth], weights)
+                if pwbs[row, col] is None:
+                    pwbs[row, col] = \
+                        NeuronMapper.build(weights)
+                else:
+                    NeuronMapper.updateWeights(
+                        pwbs[row, col], weights)
 
         return PWBArray(
                 inputShape,
