@@ -61,6 +61,24 @@ def test_NeuronMapplerMultiple():
         assert err < 2e-3
 
 
+def test_PWBUpdate():
+    weights = np.array([1, 1])
+    pwb = NeuronMapper.build(weights)
+    assert pwb.outputGain == 1
+    for v in ([1, 1], [2, 2], [-1, 1], [10, 1]):
+        computed = pwb.step(v)
+        expected = np.dot(weights, v)
+        assert np.abs(computed - expected < 1e-4)
+
+    weights = np.array([2, 1])
+    NeuronMapper.updateWeights(pwb, weights)
+    assert pwb.outputGain == 2
+    for v in ([1, 1], [2, 2], [-1, 1], [10, 1]):
+        computed = pwb.step(v)
+        expected = np.dot(weights, v)
+        assert np.abs(computed - expected < 1e-4)
+
+
 def test_LaserDiodeMapper():
     inputShape = (3, 3)
     outputShape = (32, 32)

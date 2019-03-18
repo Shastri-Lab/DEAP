@@ -109,20 +109,22 @@ class ModulatorArrayMapper:
     """
     _mrm = MRMTransferFunction()
 
-    def computePhaseShifts(intenstiyMatrix):
+    def computePhaseShifts(intenstiyMatrix, normval):
         assert not np.any(intenstiyMatrix < 0)
-        normalized = intenstiyMatrix / max(np.amax(intenstiyMatrix), 1)
+        if normval is None:
+            normval = max(np.amax(intenstiyMatrix), 1)
+        normalized = intenstiyMatrix / normval
         return ModulatorArrayMapper._mrm.phaseFromThroughput(
                     normalized)
 
-    def build(inputs):
+    def build(inputs, normval=None):
         phaseShifts = \
-            ModulatorArrayMapper.computePhaseShifts(inputs)
+            ModulatorArrayMapper.computePhaseShifts(inputs, normval)
         return ModulatorArray(phaseShifts)
 
-    def updateInputs(modulatorArray, inputs):
+    def updateInputs(modulatorArray, inputs, normval=None):
         phaseShifts = \
-            ModulatorArrayMapper.computePhaseShifts(inputs)
+            ModulatorArrayMapper.computePhaseShifts(inputs, normval)
         modulatorArray._update(phaseShifts)
 
 
@@ -213,7 +215,7 @@ class PhotonicConvolverMapper:
     """
 
     def build(image=None, kernel=None, stride=1, power=1,
-              imageShape=None, kernelShape=None):
+              imageShape=None, kernelShape=None, normval=1):
 
         if image is None:
             assert imageShape is not None
@@ -226,7 +228,7 @@ class PhotonicConvolverMapper:
         laserDiodeArray = LaserDiodeArrayMapper.build(
                 kernel.shape, image.shape, power)
         modulatorArray = ModulatorArrayMapper.build(
-                image)
+                image, normval=normval)
         photonicNeuronArray = PWBArrayMapper.build(
                 image.shape, kernel, stride)
 
