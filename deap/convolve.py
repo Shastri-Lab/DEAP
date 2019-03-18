@@ -34,7 +34,7 @@ def convDEAP(image, kernel, stride):
         weights = kernel[:, :, :, k]
         for c in range(weights.shape[2]):
             PWBArrayMapper.updateKernel(
-                weightBanks[c].photonicNeuronArray,
+                weightBanks[c].pwbArray,
                 weights[:, :, c])
 
         for h in range(0, outputShape[0], stride):

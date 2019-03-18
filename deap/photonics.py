@@ -201,13 +201,13 @@ class PhotonicConvolver:
     """
     A photonic convolver, made up different components
     """
-    def __init__(self, laserDiodeArray, modulatorArray, photonicNeuronArray):
+    def __init__(self, laserDiodeArray, modulatorArray, pwbArray):
         self.laserDiodeArray = laserDiodeArray
         self.modulatorArray = modulatorArray
-        self.photonicNeuronArray = photonicNeuronArray
+        self.pwbArray = pwbArray
 
     def step(self):
         laserOutput = self.laserDiodeArray.step()
         modulatorOutput = self.modulatorArray.step(laserOutput)
-        convOutput = self.photonicNeuronArray.step(modulatorOutput)
+        convOutput = self.pwbArray.step(modulatorOutput)
         return convOutput

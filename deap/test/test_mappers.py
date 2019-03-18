@@ -1,13 +1,13 @@
 import numpy as np
-from deap.mappers import NeuronMapper
+from deap.mappers import PWBMapper
 from deap.mappers import LaserDiodeArrayMapper
 from deap.mappers import ModulatorArrayMapper
 from deap.mappers import PWBArrayMapper
 
 
-def test_NeuronMapperTwoSum():
+def test_PWBMapperTwoSum():
     weights = np.array([1, 1])
-    pwb = NeuronMapper.build(weights)
+    pwb = PWBMapper.build(weights)
     assert pwb.outputGain == 1
 
     for v in ([1, 1], [2, 2], [-1, 1], [10, 1]):
@@ -16,9 +16,9 @@ def test_NeuronMapperTwoSum():
         assert np.abs(computed - expected < 1e-4)
 
 
-def test_NeuronMapperUnity():
+def test_PWBMapperUnity():
     weights = np.array([1])
-    unityNeuron = NeuronMapper.build(weights)
+    unityNeuron = PWBMapper.build(weights)
     assert unityNeuron.outputGain == 1
 
     for v in ([1], [2], [-1], [10]):
@@ -27,9 +27,9 @@ def test_NeuronMapperUnity():
         assert np.abs(computed - expected < 1e-4)
 
 
-def test_NeuronMapperNegative():
+def test_PWBMapperNegative():
     weights = np.array([-1])
-    pwb = NeuronMapper.build(weights)
+    pwb = PWBMapper.build(weights)
     assert pwb.outputGain == 1
 
     for v in ([1], [2], [-1], [10]):
@@ -39,9 +39,9 @@ def test_NeuronMapperNegative():
         assert np.abs(err < 1e-3)
 
 
-def test_NeuronMapperNull():
+def test_PWBMapperNull():
     weights = np.array([0])
-    unityNeuron = NeuronMapper.build(weights)
+    unityNeuron = PWBMapper.build(weights)
     assert unityNeuron.outputGain == 1
 
     for v in ([1], [2], [-1], [10]):
@@ -52,7 +52,7 @@ def test_NeuronMapperNull():
 
 def test_NeuronMapplerMultiple():
     weights = np.array([2, -3, 4, 0, 9])
-    pwb = NeuronMapper.build(weights)
+    pwb = PWBMapper.build(weights)
 
     for v in ([1, 10, 3, 2, 0], [1, 1, 1, 1, 1], [-7, 0.214, 22, 0.7, 2]):
         computed = pwb.step(v)
@@ -63,7 +63,7 @@ def test_NeuronMapplerMultiple():
 
 def test_PWBUpdate():
     weights = np.array([1, 1])
-    pwb = NeuronMapper.build(weights)
+    pwb = PWBMapper.build(weights)
     assert pwb.outputGain == 1
     for v in ([1, 1], [2, 2], [-1, 1], [10, 1]):
         computed = pwb.step(v)
@@ -71,7 +71,7 @@ def test_PWBUpdate():
         assert np.abs(computed - expected < 1e-4)
 
     weights = np.array([2, 1])
-    NeuronMapper.updateWeights(pwb, weights)
+    PWBMapper.updateWeights(pwb, weights)
     assert pwb.outputGain == 2
     for v in ([1, 1], [2, 2], [-1, 1], [10, 1]):
         computed = pwb.step(v)

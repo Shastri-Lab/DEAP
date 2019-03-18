@@ -10,7 +10,7 @@ from deap.photonics import PWBArray
 from deap.photonics import PhotonicConvolver
 
 
-class NeuronMapper:
+class PWBMapper:
     """
     Class that that maps a set of weights to an equivalent
     photonic pwb.
@@ -40,17 +40,17 @@ class NeuronMapper:
         if newPrecision % 2 == 0:
             newPrecision -= 1
 
-        NeuronMapper._precision = newPrecision
-        NeuronMapper._phase = None
-        NeuronMapper._dropput = None
+        PWBMapper._precision = newPrecision
+        PWBMapper._phase = None
+        PWBMapper._dropput = None
 
     def computePhaseShifts(weights):
-        if NeuronMapper._phase is None or NeuronMapper._dropput is None:
+        if PWBMapper._phase is None or PWBMapper._dropput is None:
             # Compute phase and dropput mapping if it hasn't been done
             # already.
-            NeuronMapper._phase, NeuronMapper._dropput = \
-                NeuronMapper._precomputeDropputToPhaseMapping(
-                        NeuronMapper._precision)
+            PWBMapper._phase, PWBMapper._dropput = \
+                PWBMapper._precomputeDropputToPhaseMapping(
+                        PWBMapper._precision)
 
         weights = np.asarray(weights)
         maxElement = np.amax(np.abs(weights))
@@ -65,8 +65,8 @@ class NeuronMapper:
 
         phaseShifts = np.zeros(weights.size)
         for i, desiredDropput in enumerate(desiredDropputs):
-            index = bisect_min(NeuronMapper._dropput, desiredDropput)
-            phaseShifts[i] = NeuronMapper._phase[index]
+            index = bisect_min(PWBMapper._dropput, desiredDropput)
+            phaseShifts[i] = PWBMapper._phase[index]
 
         return phaseShifts, outputGain
 
@@ -75,7 +75,7 @@ class NeuronMapper:
         Creates a new photonic pwb from a set of weights
         """
         phaseShifts, outputGain = \
-            NeuronMapper.computePhaseShifts(weights)
+            PWBMapper.computePhaseShifts(weights)
         return PWB(phaseShifts, outputGain)
 
     def updateWeights(photonicNeuron, weights):
@@ -83,7 +83,7 @@ class NeuronMapper:
         Updates an existing photonic pwb from a set of weights
         """
         phaseShifts, outputGain = \
-            NeuronMapper.computePhaseShifts(weights)
+            PWBMapper.computePhaseShifts(weights)
         photonicNeuron._update(phaseShifts, outputGain)
 
 
@@ -171,9 +171,9 @@ class PWBArrayMapper:
 
                 if pwbs[row, col] is None:
                     pwbs[row, col] = \
-                        NeuronMapper.build(weights)
+                        PWBMapper.build(weights)
                 else:
-                    NeuronMapper.updateWeights(
+                    PWBMapper.updateWeights(
                         pwbs[row, col], weights)
         return pwbs
 
@@ -229,10 +229,10 @@ class PhotonicConvolverMapper:
                 kernel.shape, image.shape, power)
         modulatorArray = ModulatorArrayMapper.build(
                 image, normval=normval)
-        photonicNeuronArray = PWBArrayMapper.build(
+        pwbArray = PWBArrayMapper.build(
                 image.shape, kernel, stride)
 
         return PhotonicConvolver(
                 laserDiodeArray,
                 modulatorArray,
-                photonicNeuronArray)
+                pwbArray)
