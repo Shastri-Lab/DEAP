@@ -27,7 +27,7 @@ def bisect_min(array, val):
     return np.argmin(np.abs(val - offsetArray)) - 1 + index
 
 
-def getOutputShape(inputShape, kernelShape, padding=1, stride=1):
+def getOutputShape(inputShape, kernelShape, padding=0, stride=1):
     """
     Given an input shape, kernel shape, padding and stride, return the
     dimensions of the convoled image. Will throw an error if the

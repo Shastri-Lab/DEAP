@@ -157,7 +157,6 @@ class PWBArrayMapper:
         for row in range(outputShape[0]):
             for col in range(outputShape[1]):
                 conn = connections[row, col]
-
                 # Get the number of times the  inupts were shared
                 count = sharedCounts[conn[:, 0], conn[:, 1]].ravel()
 
@@ -179,7 +178,7 @@ class PWBArrayMapper:
     def updateKernel(pwbArray, newKernel):
         PWBArrayMapper._setWeights(
             pwbArray.pwbs,
-            pwbArray.connections[:2],
+            pwbArray.connections.shape[:2],
             pwbArray.connections,
             newKernel,
             pwbArray.sharedCounts,

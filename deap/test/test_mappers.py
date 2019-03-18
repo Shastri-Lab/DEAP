@@ -115,6 +115,21 @@ def test_PWBArrayMapperSumAll():
     assert np.abs(convolved - expected) < 1e3
 
 
+def test_PWBArrayMapperZero():
+    kernel = np.zeros((3, 3))
+    inputs = np.array([
+        [1, 2, 3],
+        [4, 5, 6],
+        [7, 8, 9]
+        ])
+    pa = PWBArrayMapper.build(
+            inputs.shape, kernel, 1)
+    assert pa.connections.shape == (1, 1, 9, 2)
+    convolved = pa.step(inputs)
+    expected = 0
+    assert np.abs(convolved - expected) < 1e3
+
+
 def test_PWBArrayMapperUnity():
     kernel = np.array([
         [0, 0, 0],
