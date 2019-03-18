@@ -12,7 +12,6 @@ def convDEAP(image, kernel, stride):
     Kernel is a 4D matrix with index values row, col, depth, index.
         The depth of the kernel must be equal to the depth of the input.
     """
-    raise NotImplementedError("This is not working yet.")
     assert image.shape[2] == kernel.shape[2]
 
     # Allocate memory for storing result of convolution
@@ -26,7 +25,7 @@ def convDEAP(image, kernel, stride):
         pc = PhotonicConvolverMapper.build(
                 imageShape=inputShape,
                 kernelShape=inputShape,
-                power=255)
+                power=255, normval=255)
         weightBanks.append(pc)
 
     for k in range(kernel.shape[3]):
@@ -46,13 +45,9 @@ def convDEAP(image, kernel, stride):
 
                 for c in range(kernel.shape[2]):
                     ModulatorArrayMapper.updateInputs(
-                            weightBanks[c].modulatorArray, inputs[:, :, c])
+                            weightBanks[c].modulatorArray, inputs[:, :, c],
+                            normval=255)
                     output[h, w, k] += weightBanks[c].step()
-
-                    print("____")
-                    print(inputs[:, :, c])
-                    print(output[h, w, k])
-
     return output
 
 
