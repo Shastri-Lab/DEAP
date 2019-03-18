@@ -123,7 +123,7 @@ class PWB:
 
 
 class PWBArray:
-    def __init__(self, inputShape, connections, pwbs, sharedCounts):
+    def __init__(self, inputShape, connections, pwbs, sharedCounts, stride):
         self.inputShape = inputShape
         assert pwbs.shape == connections.shape[:2]
         self.connections = connections
@@ -131,6 +131,7 @@ class PWBArray:
         self.sharedCounts = sharedCounts
         self.pwbs = pwbs
         self._output = np.empty(self.connections.shape[:2])
+        self.stride = stride
 
     def step(self, intenstiyMatrix):
         intenstiyMatrix = np.asarray(intenstiyMatrix)

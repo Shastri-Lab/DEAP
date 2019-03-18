@@ -152,16 +152,8 @@ class PWBArrayMapper:
 
         return connections, counts
 
-    def build(inputShape, kernel, stride=1):
-        assert kernel.ndim == 2 or kernel.ndim == 3
-        assert kernel.shape[0] == kernel.shape[1]
-
-        outputShape = getOutputShape(inputShape, kernel.shape, 0, stride)
-        connections, sharedCounts = \
-            PWBArrayMapper._createConnectionGraph(
-                inputShape, kernel, stride, outputShape)
-
-        pwbs = np.full(outputShape, fill_value=None, dtype=object)
+    def _setWeights(
+            pwbs, outputShape, connections, kernel, sharedCounts, stride):
         for row in range(outputShape[0]):
             for col in range(outputShape[1]):
                 conn = connections[row, col]
@@ -182,12 +174,37 @@ class PWBArrayMapper:
                 else:
                     NeuronMapper.updateWeights(
                         pwbs[row, col], weights)
+        return pwbs
+
+    def updateKernel(pwbArray, newKernel):
+        PWBArrayMapper._setWeights(
+            pwbArray.pwbs,
+            pwbArray.connections[:2],
+            pwbArray.connections,
+            newKernel,
+            pwbArray.sharedCounts,
+            pwbArray.stride)
+
+    def build(inputShape, kernel, stride=1):
+        assert kernel.ndim == 2 or kernel.ndim == 3
+        assert kernel.shape[0] == kernel.shape[1]
+
+        outputShape = getOutputShape(inputShape, kernel.shape, 0, stride)[:-1]
+        connections, sharedCounts = \
+            PWBArrayMapper._createConnectionGraph(
+                inputShape, kernel, stride, outputShape)
+
+        pwbs = PWBArrayMapper. \
+            _setWeights(
+                np.full(outputShape, fill_value=None, dtype=object),
+                outputShape, connections, kernel, sharedCounts, stride)
 
         return PWBArray(
                 inputShape,
                 connections,
                 pwbs,
-                sharedCounts)
+                sharedCounts,
+                stride)
 
 
 class PhotonicConvolverMapper:
@@ -196,7 +213,17 @@ class PhotonicConvolverMapper:
     performing a full convolution.
     """
 
-    def build(image, kernel, stride=1, power=1):
+    def build(image=None, kernel=None, stride=1, power=1,
+              imageShape=None, kernelShape=None):
+
+        if image is None:
+            assert imageShape is not None
+            image = np.zeros(imageShape)
+
+        if kernel is None:
+            assert kernelShape is not None
+            kernel = np.zeros(kernelShape)
+
         laserDiodeArray = LaserDiodeArrayMapper.build(
                 kernel.shape, image.shape, power)
         modulatorArray = ModulatorArrayMapper.build(
