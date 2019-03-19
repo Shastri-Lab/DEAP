@@ -119,6 +119,39 @@ def test_ModulatorArrayMapper():
     assert np.all(err < 1e-9)
 
 
+def test_ModulatorArrayMapperUpdate():
+    intenstiyMatrix = np.array([
+        [0.4,  0.3, 0.2, 0.9, 0.9],
+        [0.2,  0.3, 0.1, 0.2,  0.4],
+        [0.1,  0.9, 0.8, 0.8,  0.4],
+        [0.05, 0.2, 0.9, 0.77, 0.43],
+        [0.05, 0.1, 0.9, 0.8,  0.9]])
+
+    ma = ModulatorArrayMapper.build(intenstiyMatrix)
+    inputs = np.array([
+        [0, 1, 2, 4,       9],
+        [255, 20, 3, 8,    2],
+        [5, 2, 1, 5,       1],
+        [101, 203, 2, 11,  1],
+        [76, 54, 100, 201, 1]])
+    actual = ma.step(inputs)
+    expected = intenstiyMatrix * inputs
+    err = np.abs(actual - expected)
+    assert np.all(err < 1e-9)
+
+    intenstiyMatrix = np.array([
+        [0.3,  0.4, 0.1, 0.3, 0.9],
+        [0.8,  0.3, 0.2, 0.2,  0.2],
+        [0.2,  0.2, 0.8, 0.8,  0.9],
+        [0.09, 0.1, 0.2, 0.7, 0.46],
+        [0.02, 0.7, 0.5, 0.5,  0.6]])
+    ModulatorArrayMapper.updateInputs(ma, intenstiyMatrix)
+    actual = ma.step(inputs)
+    expected = intenstiyMatrix * inputs
+    err = np.abs(actual - expected)
+    assert np.all(err < 1e-9)
+
+
 def test_PWBArrayMapperSumAll():
     kernel = np.ones((3, 3))
     inputs = np.array([
