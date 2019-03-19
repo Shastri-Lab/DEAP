@@ -3,6 +3,7 @@ from deap.mappers import PWBMapper
 from deap.mappers import LaserDiodeArrayMapper
 from deap.mappers import ModulatorArrayMapper
 from deap.mappers import PWBArrayMapper
+from deap.mappers import PhotonicConvolverMapper
 
 
 def test_PWBMapperTwoSum():
@@ -189,3 +190,32 @@ def test_PWBArrayMapperUnity():
     convolved = pa.step(paddedInputs)
     expected = 1
     assert np.all(np.abs(convolved - expected) < 0.01)
+
+
+def test_PhotonicConvolverMapper():
+    kernel = np.ones((3, 3, 1))
+    inputs = np.zeros((3, 3, 1))
+    inputs[:, :, 0] = np.array([
+        [1, 2, 3],
+        [4, 5, 6],
+        [7, 8, 9]
+    ])
+    pa = PhotonicConvolverMapper.build(
+        inputs, kernel, 1)
+    convolved = pa.step()
+    expected = inputs.sum()
+    assert np.abs(convolved - expected) < 1e3
+
+
+def test_PhotonicConvolverZero():
+    kernel = np.zeros((3, 3))
+    inputs = np.array([
+        [1, 2, 3],
+        [4, 5, 6],
+        [7, 8, 9]
+        ])
+    pa = PhotonicConvolverMapper.build(
+        inputs, kernel, 1)
+    convolved = pa.step()
+    expected = 0
+    assert np.abs(convolved - expected) < 1e3
