@@ -215,7 +215,7 @@ class PhotonicConvolverMapper:
     """
 
     def build(image=None, kernel=None, stride=1, power=1,
-              imageShape=None, kernelShape=None, normval=1):
+              imageShape=None, kernelShape=None, normval=None):
 
         if image is None:
             assert imageShape is not None
