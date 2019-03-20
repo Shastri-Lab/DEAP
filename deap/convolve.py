@@ -25,7 +25,7 @@ def convDEAP(image, kernel, stride):
         pc = PhotonicConvolverMapper.build(
                 imageShape=inputShape,
                 kernelShape=inputShape,
-                power=255, normval=255)
+                power=255)
         weightBanks.append(pc)
 
     for k in range(kernel.shape[3]):
@@ -42,11 +42,14 @@ def convDEAP(image, kernel, stride):
                 inputs = \
                     image[h:min(h + kernel.shape[0], image.shape[0]),
                           w:min(w + kernel.shape[0], image.shape[1]), :]
-
                 for c in range(kernel.shape[2]):
                     ModulatorArrayMapper.updateInputs(
-                            weightBanks[c].modulatorArray, inputs[:, :, c],
-                            normval=255)
+                        weightBanks[c].modulatorArray,
+                        inputs,
+                        normval=255)
+
+                # Perform convolution:
+                for c in range(kernel.shape[2]):
                     output[h, w, k] += weightBanks[c].step()
     return output
 
