@@ -6,7 +6,7 @@ from deap.mappers import ModulatorArrayMapper
 from deap.mappers import PWBArrayMapper
 
 
-def convDEAP(image, kernel, stride):
+def convDEAP(image, kernel, stride, bias=0, normval=255):
     """
     Image is a 3D matrix with index values row, col, depth, index
     Kernel is a 4D matrix with index values row, col, depth, index.
@@ -25,7 +25,7 @@ def convDEAP(image, kernel, stride):
         pc = PhotonicConvolverMapper.build(
                 imageShape=inputShape,
                 kernelShape=inputShape,
-                power=255)
+                power=normval)
         weightBanks.append(pc)
 
     for k in range(kernel.shape[3]):
@@ -46,11 +46,13 @@ def convDEAP(image, kernel, stride):
                     ModulatorArrayMapper.updateInputs(
                         weightBanks[c].modulatorArray,
                         inputs,
-                        normval=255)
+                        normval=normval)
 
                 # Perform convolution:
                 for c in range(kernel.shape[2]):
                     output[h, w, k] += weightBanks[c].step()
+                output[h, w, k] += bias
+
     return output
 
 
