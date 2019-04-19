@@ -45,7 +45,7 @@ def convDEAP(image, kernel, stride, bias=0, normval=255):
                 for c in range(kernel.shape[2]):
                     ModulatorArrayMapper.updateInputs(
                         weightBanks[c].modulatorArray,
-                        inputs,
+                        inputs[:, :, c],
                         normval=normval)
 
                 # Perform convolution:

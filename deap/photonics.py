@@ -138,10 +138,10 @@ class PWBArray:
         if intenstiyMatrix.shape != self.inputShape:
             raise AssertionError(
                 "Input shape {} is not "
-                "equal to array shape {}").format(
+                "equal to array shape {}".format(
                     intenstiyMatrix.shape,
                     self.inputShape
-                )
+                ))
 
         self._output.fill(0)
         for row in range(self.connections.shape[0]):
