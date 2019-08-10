@@ -3,6 +3,10 @@
 
 DEAP and DEAP-GIP are photonic architectures that can perform image convolutions at ultrafast speeds. This repo provides a high level simulator and mapping tool for these architectures.
 
+To reference this work, please cite:
+
+V. Bangari, B. A. Marquez, H. B. Miller, A. N. Tait, M. A. Nahmias, T. Ferreira de Lima, H.-T. Peng, P. R. Prucnal, and B. J. Shastri, ``Digital electronics and analog photonics for convolutional neural networks
+(DEAP-CNNs),'' arXiv:1907.01525
 
 ## Directory Structure
 ```
